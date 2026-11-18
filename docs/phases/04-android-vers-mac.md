@@ -1,6 +1,6 @@
 # Phase 04 — Texte Android → Mac
 
-**Statut :** en cours — code et tests automatisés terminés ; reste la validation sur le Samsung.
+**Statut :** en cours — fonctionne sur le Samsung (2026-11-18) ; reste les mesures listées ci-dessous.
 
 ## Objectif
 Envoyer un texte du téléphone vers le Mac en un geste, malgré l'interdiction de lecture en arrière-plan (Android 10+).
@@ -18,6 +18,7 @@ Phases 02 et 03.
 - [x] `SendClipboardActivity` transparente (lecture au focus)
 - [x] `ClipTileService` (API 34+ : `startActivityAndCollapse(PendingIntent)`)
 - [x] `ShareReceiverActivity`
+- [x] Entrée « Envoyer au Mac » du menu de sélection de texte (`ACTION_PROCESS_TEXT`)
 - [x] Réception côté Mac et écriture avec anti-écho
 - [ ] Mesurer la latence tuile → Mac sur Samsung
 
