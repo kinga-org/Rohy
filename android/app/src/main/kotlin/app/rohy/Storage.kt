@@ -24,6 +24,10 @@ class Storage(context: Context) {
             prefs.edit().apply { if (value == null) remove(KEY_MAC) else putString(KEY_MAC, value.encode()) }.apply()
         }
 
+    var journalText: String?
+        get() = prefs.getString(KEY_JOURNAL, null)
+        set(value) = prefs.edit().putString(KEY_JOURNAL, value).apply()
+
     @Synchronized
     fun identity(): Identity {
         prefs.getString(KEY_IDENTITY, null)?.let(::unwrap)?.let { return Identity(it) }
@@ -62,6 +66,7 @@ class Storage(context: Context) {
     private companion object {
         const val KEY_MAC = "paired_mac"
         const val KEY_IDENTITY = "identity"
+        const val KEY_JOURNAL = "journal"
         const val KEY_ALIAS = "rohy_identity_wrap"
         const val KEYSTORE = "AndroidKeyStore"
         const val TRANSFORMATION = "AES/GCM/NoPadding"

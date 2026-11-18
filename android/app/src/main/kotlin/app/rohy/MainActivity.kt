@@ -1,6 +1,10 @@
 package app.rohy
 
 import android.Manifest
+import android.app.ActivityManager
+import android.app.NotificationManager
+import android.net.Uri
+import android.os.PowerManager
 import android.app.StatusBarManager
 import android.content.ClipboardManager
 import android.content.ComponentName
@@ -40,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -53,6 +58,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -61,6 +69,7 @@ import app.rohy.core.PairingPayload
 class MainActivity : ComponentActivity() {
     private lateinit var storage: Storage
     private var pairedMac by mutableStateOf<PairedMac?>(null)
+    private var checks by mutableStateOf<List<ReliabilityCheck>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +82,7 @@ class MainActivity : ComponentActivity() {
             val scheme = if (Build.VERSION.SDK_INT >= 31) dynamicLightColorScheme(context) else lightColorScheme()
             MaterialTheme(colorScheme = scheme) {
                 val status by SyncService.status.collectAsState()
+                val journal by SyncService.journalEvents.collectAsState()
                 HomeScreen(
                     mac = pairedMac,
                     status = status,
@@ -82,7 +92,9 @@ class MainActivity : ComponentActivity() {
                     onReconnect = { SyncService.start(this) },
                     onForget = ::forgetMac,
                     onAddTile = ::requestTile,
-                    onBatterySettings = { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
+                    checks = checks,
+                    onFixCheck = ::fix,
+                    journal = journal,
                 )
             }
         }
@@ -91,6 +103,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         pairedMac = storage.pairedMac
+        checks = reliabilityChecks(readFacts())
     }
 
     private fun scanQrCode() {
@@ -133,6 +146,28 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun readFacts() = DeviceFacts(
+        manufacturer = Build.MANUFACTURER,
+        notificationsEnabled = getSystemService(NotificationManager::class.java).areNotificationsEnabled(),
+        ignoringBatteryOptimizations = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName),
+        backgroundRestricted = getSystemService(ActivityManager::class.java).isBackgroundRestricted,
+    )
+
+    private fun fix(id: CheckId) {
+        val packageUri = Uri.parse("package:$packageName")
+        val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri)
+        val intent = when (id) {
+            CheckId.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            CheckId.BATTERY_OPTIMIZATION -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri)
+            CheckId.BACKGROUND_RESTRICTION -> appDetails
+            CheckId.SAMSUNG_NEVER_SLEEPING -> SAMSUNG_BATTERY_SCREENS.map { Intent().setComponent(it) }
+                .firstOrNull { it.resolveActivity(packageManager) != null } ?: appDetails
+            CheckId.RECENTS_LOCK -> return toast("Ouvre les apps récentes, touche l'icône de Rohy, puis « Garder ouvert ».")
+        }
+        runCatching { startActivity(intent) }.onFailure { startActivity(appDetails) }
+    }
+
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 }
 
@@ -146,7 +181,9 @@ private fun HomeScreen(
     onReconnect: () -> Unit,
     onForget: () -> Unit,
     onAddTile: () -> Unit,
-    onBatterySettings: () -> Unit,
+    checks: List<ReliabilityCheck>,
+    onFixCheck: (CheckId) -> Unit,
+    journal: List<ConnectionEvent>,
 ) {
     Scaffold { padding ->
         Column(
@@ -189,13 +226,50 @@ private fun HomeScreen(
                     OutlinedButton(onClick = onAddTile, modifier = Modifier.fillMaxWidth()) { Text("Ajouter la tuile") }
                 }
                 Section("Garder la connexion", Icons.Filled.Settings) {
-                    Text("Sur Samsung, mets Rohy dans « Applis jamais en veille » et la batterie sur « Non restreinte ».")
-                    OutlinedButton(onClick = onBatterySettings, modifier = Modifier.fillMaxWidth()) {
-                        Text("Ouvrir les réglages de batterie")
+                    Text("Android coupe les apps en arrière-plan pour économiser la batterie. Ces réglages gardent Rohy connecté.")
+                    checks.forEach { CheckRow(it, onFixCheck) }
+                }
+                Section("Journal de connexion", Icons.Filled.Info) {
+                    if (journal.isEmpty()) Text("Aucun événement pour l'instant.")
+                    journal.take(20).forEach { event ->
+                        Text(
+                            "${formatTime(event.atMillis)}  ${event.message}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+private val SAMSUNG_BATTERY_SCREENS = listOf(
+    ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),
+    ComponentName("com.samsung.android.sm", "com.samsung.android.sm.battery.ui.BatteryActivity"),
+)
+
+private fun formatTime(millis: Long): String =
+    SimpleDateFormat("dd/MM HH:mm:ss", Locale.FRANCE).format(Date(millis))
+
+@Composable
+private fun CheckRow(check: ReliabilityCheck, onFix: (CheckId) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val (icon, tint, label) = when (check.state) {
+                CheckState.OK -> Triple(Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary, "OK")
+                CheckState.TO_FIX -> Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "À corriger")
+                CheckState.TO_CHECK -> Triple(Icons.Filled.Info, MaterialTheme.colorScheme.onSurfaceVariant, "À vérifier")
+            }
+            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(check.title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            if (check.state != CheckState.OK) {
+                TextButton(onClick = { onFix(check.id) }) {
+                    Text(if (check.state == CheckState.TO_FIX) "Corriger" else "Ouvrir")
+                }
+            }
+        }
+        Text(check.explanation, style = MaterialTheme.typography.bodySmall)
     }
 }
 

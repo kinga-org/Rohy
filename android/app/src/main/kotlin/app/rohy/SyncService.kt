@@ -11,6 +11,9 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -44,13 +47,35 @@ class SyncService : Service() {
     private var pairingToken: ByteArray? = null
     private val outbox = ArrayDeque<Clip>()
     private var generation = 0
+    private lateinit var journal: ConnectionJournal
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            if (!capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return
+            executor.execute {
+                val wasUp = wifiUp
+                wifiUp = true
+                if (wasUp || !status.value.reconnectsOnNetworkReturn) return@execute
+                log("Wi-Fi revenu : reconnexion immédiate")
+                reconnectNow()
+            }
+        }
+
+        override fun onLost(network: Network) = executor.execute {
+            wifiUp = false
+            log("Réseau perdu")
+        }
+    }
+    private var wifiUp = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
         storage = Storage(this)
+        journal = ConnectionJournal.decode(storage.journalText)
+        mutableJournal.value = journal.all()
         createChannel()
+        getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(networkCallback)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,11 +83,16 @@ class SyncService : Service() {
         val action = intent?.action ?: ACTION_START
         val text = intent?.getStringExtra(EXTRA_TEXT)
         val uri = intent?.getStringExtra(EXTRA_URI)
-        executor.execute { handle(action, text, uri) }
+        val reason = intent?.getStringExtra(EXTRA_REASON) ?: if (intent == null) "redémarrage par Android" else null
+        executor.execute {
+            reason?.let { log("Service démarré ($it)") }
+            handle(action, text, uri)
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        runCatching { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(networkCallback) }
         executor.execute { disconnect() }
         executor.shutdown()
         super.onDestroy()
@@ -127,7 +157,7 @@ class SyncService : Service() {
             override fun onReady() = executor.execute {
                 if (gen != generation) return@execute
                 backoff.reset()
-                publish(SyncStatus.Connected(mac.name))
+                publish(SyncStatus.Connected(mac.name), detail = candidates[index])
             }
 
             override fun onClip(clip: Clip) {
@@ -138,6 +168,7 @@ class SyncService : Service() {
                 Log.w(TAG, "connection to ${candidates[index]}:${mac.port} closed: code=$code reason=$reason")
                 if (gen != generation) return@execute
                 val wasReady = status.value.isConnected
+                if (wasReady) log("Connexion perdue (code=${code ?: "-"}, $reason)")
                 outbox.addAll(client?.drainPending().orEmpty())
                 client = null
                 when {
@@ -183,11 +214,21 @@ class SyncService : Service() {
         getSystemService(ClipboardManager::class.java).setPrimaryClip(data)
     }
 
-    private fun publish(newStatus: SyncStatus) {
+    /** Journals status changes only (not every retry countdown) to keep hours of history. */
+    private fun publish(newStatus: SyncStatus, detail: String? = null) {
+        val previous = status.value
+        if (previous::class != newStatus::class) log(newStatus.label + (detail?.let { " ($it)" } ?: ""))
         mutableStatus.value = newStatus
         main.post {
             getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(newStatus))
         }
+    }
+
+    private fun log(message: String) {
+        Log.i(TAG, message)
+        journal.add(System.currentTimeMillis(), message)
+        storage.journalText = journal.encode()
+        mutableJournal.value = journal.all()
     }
 
     private fun createChannel() {
@@ -227,11 +268,15 @@ class SyncService : Service() {
         private const val ACTION_PAIR = "app.rohy.PAIR"
         private const val EXTRA_TEXT = "text"
         private const val EXTRA_URI = "uri"
+        private const val EXTRA_REASON = "reason"
 
         private val mutableStatus = MutableStateFlow<SyncStatus>(SyncStatus.Stopped)
         val status: StateFlow<SyncStatus> = mutableStatus
+        private val mutableJournal = MutableStateFlow<List<ConnectionEvent>>(emptyList())
+        val journalEvents: StateFlow<List<ConnectionEvent>> = mutableJournal
 
-        fun start(context: Context) = launch(context, ACTION_START)
+        fun start(context: Context, reason: String = "app ouverte") =
+            launch(context, ACTION_START) { putExtra(EXTRA_REASON, reason) }
         fun stop(context: Context) = launch(context, ACTION_STOP)
         fun forget(context: Context) = launch(context, ACTION_FORGET)
         fun send(context: Context, text: String) = launch(context, ACTION_SEND) { putExtra(EXTRA_TEXT, text) }
