@@ -40,7 +40,9 @@ Phases 03 et 04.
 - Wi-Fi coupé puis rétabli : reconnexion **1,2 s** après le retour du réseau (le Wi-Fi lui-même a mis 13 s à revenir).
 - Redémarrage de l'app Mac : reconnexion seule dans le délai d'attente progressif (≤ 30 s).
 - Mise à jour de Rohy : service relancé seul (« Service démarré (mise à jour de Rohy) »).
-- Restent à faire : redémarrage du téléphone, test d'endurance de 24 h.
+- Redémarrage du téléphone : service relancé seul 6 s après la fin du démarrage, connecté **1,4 s** plus tard,
+  sans ouvrir l'app.
+- Reste à faire : test d'endurance de 24 h (téléphone débranché, écran éteint).
 
 ## Critères d'acceptation
 - Service toujours connecté après 24 h écran éteint sur le Samsung de test (journal à l'appui).
