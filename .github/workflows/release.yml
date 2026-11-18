@@ -1,0 +1,143 @@
+name: Releases
+
+# Builds Android, macOS and Windows and attaches them to a draft GitHub release.
+# - push a tag `v0.1.0`, or run it from Actions with a version: creates the draft release;
+# - a pull request that changes this file: builds only (artifacts on the run), no release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version sans le v (ex. 0.1.0)"
+        required: true
+  pull_request:
+    paths: [".github/workflows/release.yml", "mac/scripts/bundle.sh"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      value: ${{ steps.version.outputs.value }}
+    steps:
+      - id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT: ${{ inputs.version }}
+          PR: ${{ github.event.number }}
+        run: |
+          case "$EVENT" in
+            push) value="${GITHUB_REF_NAME#v}" ;;
+            workflow_dispatch) value="${INPUT#v}" ;;
+            *) value="0.0.0-pr$PR" ;;
+          esac
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+
+  android:
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+      HAS_KEY: ${{ secrets.ROHY_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-36 build-tools;36.0.0"
+      - name: Release key (GitHub secrets)
+        if: env.HAS_KEY == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ROHY_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/rohy-release.jks"
+          echo "ROHY_KEYSTORE_PATH=$RUNNER_TEMP/rohy-release.jks" >> "$GITHUB_ENV"
+      - name: Build the APK
+        working-directory: android
+        env:
+          ROHY_KEYSTORE_PASSWORD: ${{ secrets.ROHY_KEYSTORE_PASSWORD }}
+          ROHY_KEY_ALIAS: ${{ secrets.ROHY_KEY_ALIAS }}
+          ROHY_KEY_PASSWORD: ${{ secrets.ROHY_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon :app:assembleRelease -ProhyVersion="$VERSION" -ProhyVersionCode="${{ github.run_number }}"
+      - name: Name the APK
+        run: |
+          # Without the release key the APK is signed with a throwaway debug key: say so in its name.
+          suffix=$([ "$HAS_KEY" = "true" ] && echo "" || echo "-test-signature")
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release.apk "out/Rohy-android-$VERSION$suffix.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*.apk
+
+  macos:
+    needs: version
+    runs-on: macos-15
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Rohy.app (Apple Silicon + Intel, ad-hoc signature)
+        env:
+          UNIVERSAL: "1"
+          ROHY_VERSION: ${{ needs.version.outputs.value }}
+          ROHY_BUILD: ${{ github.run_number }}
+        run: mac/scripts/bundle.sh release
+      - name: Zip
+        run: |
+          mkdir -p out
+          ditto -c -k --keepParent mac/dist/Rohy.app "out/Rohy-macOS-$VERSION.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: out/*.zip
+
+  windows:
+    needs: version
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build Rohy.exe
+        working-directory: desktop
+        run: cargo build --release -p rohy-desktop
+      - name: Zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out, pkg | Out-Null
+          Copy-Item desktop/target/release/rohy-desktop.exe pkg/Rohy.exe
+          Copy-Item desktop/apps/rohy-desktop/assets/fonts/OFL.txt pkg/Inter-OFL.txt
+          Compress-Archive -Path pkg/* -DestinationPath "out/Rohy-windows-x64-$env:VERSION.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: out/*.zip
+
+  release:
+    if: github.event_name != 'pull_request'
+    needs: [version, android, macos, windows]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Draft release
+        run: |
+          gh release create "v$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --draft --title "Rohy $VERSION" --generate-notes

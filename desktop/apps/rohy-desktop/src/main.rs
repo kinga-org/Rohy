@@ -1,4 +1,6 @@
 //! Rohy for Windows and Linux: tray icon, pairing window and clipboard sync (iced daemon).
+// A tray app: no console window on Windows.
+#![cfg_attr(windows, windows_subsystem = "windows")]
 
 mod clipboard;
 mod identity;

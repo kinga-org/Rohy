@@ -66,6 +66,32 @@ gratuit « Apple Development » (Xcode → Réglages → Comptes) puis :
 CODESIGN_IDENTITY="Apple Development" mac/scripts/bundle.sh
 ```
 
+## Releases (téléchargements GitHub)
+
+L'action « Releases » (`.github/workflows/release.yml`) construit les trois apps et les joint à une
+release GitHub **brouillon** : rien n'est public tant qu'elle n'est pas publiée depuis GitHub.
+
+| Fichier | Contenu |
+|---|---|
+| `Rohy-android-<version>.apk` | App Android, à installer à la main (sources inconnues autorisées) |
+| `Rohy-macOS-<version>.zip` | `Rohy.app` universelle (Apple Silicon et Intel) |
+| `Rohy-windows-x64-<version>.zip` | `Rohy.exe` portable, sans installateur |
+
+Créer une release : pousser une étiquette, par exemple `git tag v0.1.0 && git push origin v0.1.0`, ou
+lancer l'action depuis l'onglet Actions avec une version. Une PR qui modifie l'action construit seulement.
+
+Signatures, à savoir avant de partager :
+- **Android** : signé avec la clé de release si les secrets existent, sinon avec une clé de test (le nom
+  du fichier finit alors par `-test-signature` et une future version signée ne s'installera pas par-dessus).
+  Créer la clé une fois, la garder hors du dépôt, puis ajouter quatre secrets au dépôt :
+  `keytool -genkeypair -v -keystore rohy-release.jks -alias rohy -keyalg RSA -keysize 4096 -validity 10000`,
+  puis `ROHY_KEYSTORE_BASE64` (sortie de `base64 -i rohy-release.jks`), `ROHY_KEYSTORE_PASSWORD`,
+  `ROHY_KEY_ALIAS` (`rohy`) et `ROHY_KEY_PASSWORD`. Perdre cette clé empêche toute mise à jour de l'app.
+- **macOS** : signature ad hoc ; sur un autre Mac, la première ouverture se fait par clic droit → Ouvrir.
+  La diffusion sans avertissement demandera un certificat Developer ID et la notarisation.
+- **Windows** : non signé ; SmartScreen affiche un avertissement (« Informations complémentaires » →
+  « Exécuter quand même »).
+
 ## Sécurité
 
 Le protocole est décrit dans [`docs/protocol.md`](docs/protocol.md). Il n'a pas encore été audité.
