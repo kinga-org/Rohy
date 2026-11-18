@@ -66,8 +66,13 @@ class ProcessTextActivity : Activity() {
 class ClipTileService : TileService() {
     override fun onStartListening() {
         super.onStartListening()
+        val computer = Storage(this).pairedMac?.displayName
         qsTile?.apply {
-            state = if (Storage(this@ClipTileService).pairedMac == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+            state = if (computer == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+            // One UI shows the label and subtitle only on large tiles.
+            label = "Envoyer"
+            subtitle = computer ?: "Aucun ordinateur"
+            contentDescription = computer?.let { "Envoyer le presse-papiers à $it" } ?: "Rohy : aucun ordinateur associé"
             updateTile()
         }
     }
