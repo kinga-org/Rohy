@@ -14,7 +14,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 | [05 — Prototype OTP via appareil compagnon](../phases/05-prototype-otp-compagnon.md) | À faire | Tout |
 | [06 — Fiabilité et accueil Samsung](../phases/06-fiabilite-samsung.md) | En cours | Test d'endurance de 24 h |
 | [07 — Cœur Rust et serveur pour le bureau](../phases/07-coeur-rust.md) | En cours | CI Ubuntu et Windows au vert |
-| [08 — App de bureau Windows et Linux (iced)](../phases/08-app-bureau-iced.md) | À faire | Tout |
+| [08 — App de bureau Windows et Linux (iced)](../phases/08-app-bureau-iced.md) | En cours | Paquets d'installation, essais Windows et Linux |
 | [09 — Plusieurs ordinateurs par téléphone](../phases/09-plusieurs-ordinateurs.md) | À faire | Tout |
 
 ## Backlog (docs/features)
