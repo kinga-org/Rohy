@@ -38,7 +38,7 @@ class ModelTest {
 
     @Test
     fun statusLabelsAreUserFacing() {
-        assertEquals("Aucun Mac associé", SyncStatus.NotPaired.label)
+        assertEquals("Aucun ordinateur associé", SyncStatus.NotPaired.label)
         assertEquals("Synchronisation arrêtée", SyncStatus.Stopped.label)
         assertEquals("Recherche de Mac…", SyncStatus.Searching("Mac").label)
         assertEquals("Connecté à Mac", SyncStatus.Connected("Mac").label)
