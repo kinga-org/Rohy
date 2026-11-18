@@ -10,5 +10,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Rohy"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+# Inter (OFL), registered by macOS through ATSApplicationFontsPath.
+cp -R Resources/Fonts "$APP/Contents/Resources/Fonts"
 codesign --force --sign "${CODESIGN_IDENTITY:--}" --options runtime "$APP"
 echo "Built $APP"

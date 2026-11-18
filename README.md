@@ -4,7 +4,7 @@ Pont de presse-papiers entre un Mac et un téléphone Android : natif des deux c
 chiffré de bout en bout, gratuit et libre. « Rohy » signifie « lien, corde » en malgache.
 
 - **Mac → Android** : tout texte copié sur le Mac arrive dans le presse-papiers du téléphone.
-- **Android → Mac** : tuile Réglages rapides « Envoyer au Mac », menu Partager, ou action de la notification
+- **Android → ordinateur** : tuile Réglages rapides « Envoyer », menu Partager, ou action de la notification
   (Android interdit la lecture du presse-papiers en arrière-plan depuis Android 10).
 
 ## Structure
@@ -16,6 +16,23 @@ chiffré de bout en bout, gratuit et libre. « Rohy » signifie « lien, corde �
 | `android/` | `core` (protocole Kotlin, JVM pur) et `app` (service, tuile, partage, interface Compose) |
 | `protocol/` | Vecteurs de test partagés par les deux implémentations |
 | `docs/` | Protocole, phases, backlog, étude concurrentielle, [avancement](docs/avancement/README.md) |
+
+## Deux apps bureau, une seule expérience
+
+L'app Mac (Swift, `mac/`) et l'app Windows/Linux (Rust + iced, `desktop/apps/rohy-desktop`) sont deux
+codes différents qui doivent rester identiques pour l'utilisateur. **Toute modification de l'une impose
+de vérifier l'autre**, dans la même PR ou dans une PR liée :
+
+- mêmes écrans, libellés, états (démarrage, attente, connecté, erreur), couleurs claires et sombres,
+  choix « Apparence » et comportements (association, oubli, fermeture de la fenêtre du QR code) ;
+- même maquette de référence : canvas « Rohy bureau — refonte »
+  (https://claude.ai/artifact/StchZXp6RPY4E4Nv2CwSc9) ;
+- les textes et règles d'affichage partagés (temps relatifs, dates, ligne d'état) sont testés des deux
+  côtés avec les mêmes valeurs attendues (`DesktopPresentation` en Swift, `state.rs` en Rust) ;
+- seule l'enveloppe propre au système peut différer : sur Mac, un panneau dans la barre des menus ;
+  sur Windows et Linux, le menu natif de l'icône et une fenêtre « Téléphones associés ».
+
+La description de la PR indique ce qui a été vérifié de l'autre côté, ou pourquoi rien n'est à faire.
 
 ## Prérequis
 
