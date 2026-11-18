@@ -35,6 +35,9 @@ Phase 07.
 - Logique testée à part (`state`, `clipboard`, `identity`, `images`, `service`) ; `main.rs` et
   `platform.rs` (colle avec le système) exclus de la couverture et vérifiés à la main.
 - Essai sur le Mac de développement : l'app démarre, l'icône apparaît, serveur et Bonjour actifs.
+- Essai avec le Galaxy S24 Ultra (18/11, 16:49) : association par QR code avec l'app iced sur le Mac,
+  connexion établie (port de repli 51981), synchronisation confirmée par l'utilisateur.
+  Retour : fonctionne, mais le design des fenêtres est à revoir.
 
 ## Critères d'acceptation
 Association et synchronisation dans les deux sens avec le Samsung, sur Windows 11 et sur une distribution Linux.
