@@ -5,6 +5,7 @@ mod identity;
 mod images;
 mod platform;
 mod service;
+mod settings;
 mod state;
 mod ui;
 
@@ -13,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use iced::widget::image;
-use iced::{Element, Subscription, Task, Theme, window};
+use iced::{Element, Subscription, Task, window};
 use rohy_core::crypto::Identity;
 use rohy_core::pairing::PairingPayload;
 use rohy_core::trusted::{FileStore, Registry};
@@ -21,6 +22,7 @@ use tray_icon::menu::MenuEvent;
 
 use crate::clipboard::ClipboardLogic;
 use crate::service::{Command, Service, ServiceEvent};
+use crate::settings::Appearance;
 use crate::state::{Effect, Model, ServerStatus};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,12 +55,13 @@ struct App {
     copied: bool,
     /// Windows to open once the server listens (`--appairage`, `--telephones`: manual checks).
     pending: Vec<View>,
+    appearance: Appearance,
 }
 
-fn data_file() -> std::path::PathBuf {
+fn data_file(name: &str) -> std::path::PathBuf {
     directories::ProjectDirs::from("app", "rohy", "Rohy")
-        .map(|dirs| dirs.data_dir().join("devices.json"))
-        .unwrap_or_else(|| std::path::PathBuf::from("rohy-devices.json"))
+        .map(|dirs| dirs.data_dir().join(name))
+        .unwrap_or_else(|| std::path::PathBuf::from(format!("rohy-{name}")))
 }
 
 fn boot() -> (App, Task<Message>) {
@@ -67,7 +70,7 @@ fn boot() -> (App, Task<Message>) {
         Identity::generate()
     });
     let identity = Arc::new(identity);
-    let registry = Arc::new(Registry::new(FileStore::open(data_file())));
+    let registry = Arc::new(Registry::new(FileStore::open(data_file("devices.json"))));
     let name = gethostname::gethostname().to_string_lossy().into_owned();
     let service = service::spawn(
         identity.clone(),
@@ -104,6 +107,7 @@ fn boot() -> (App, Task<Message>) {
                 _ => None,
             })
             .collect(),
+        appearance: Appearance::load(&data_file("appearance")),
     };
     (app, Task::none())
 }
@@ -140,7 +144,7 @@ impl App {
     fn tick(&mut self) -> Task<Message> {
         // The tray icon must be created on the UI thread once its event loop runs.
         if self.tray.is_none() && self.tray_error.is_none() {
-            match platform::Tray::create() {
+            match platform::Tray::create(self.appearance) {
                 Ok(tray) => self.tray = Some(tray),
                 Err(error) => self.tray_error = Some(error),
             }
@@ -154,6 +158,16 @@ impl App {
                 tasks.push(self.open(View::Devices));
             } else if event.id == *tray.quit.id() {
                 return iced::exit();
+            } else if let Some((choice, _)) = tray
+                .appearance
+                .iter()
+                .find(|(_, item)| event.id == *item.id())
+            {
+                self.appearance = *choice;
+                tray.show_appearance(self.appearance);
+                if let Err(error) = self.appearance.save(&data_file("appearance")) {
+                    eprintln!("Rohy: apparence non enregistrée ({error})");
+                }
             }
         }
         while let Ok(event) = self.service.events.try_recv() {
@@ -273,7 +287,7 @@ fn main() -> iced::Result {
             |daemon, bytes| daemon.font(bytes),
         )
         .default_font(ui::BODY)
-        .theme(Theme::Light)
+        .theme(|app: &App, _| app.appearance.theme())
         .title(App::title)
         .subscription(App::subscription)
         .run()

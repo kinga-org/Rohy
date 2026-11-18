@@ -5,11 +5,12 @@ use std::time::Duration;
 
 use rohy_core::messages::Clip;
 use tokio::sync::mpsc::UnboundedSender;
-use tray_icon::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tray_icon::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
 use crate::clipboard::ClipboardLogic;
 use crate::service::Command;
+use crate::settings::Appearance;
 
 /// Names of the formats currently on the Windows clipboard (password managers mark secrets with them).
 #[cfg(windows)]
@@ -72,20 +73,36 @@ pub struct Tray {
     pub pair: MenuItem,
     pub devices: MenuItem,
     pub quit: MenuItem,
+    /// "Apparence" submenu, one check item per choice (only the current one is checked).
+    pub appearance: Vec<(Appearance, CheckMenuItem)>,
 }
 
 impl Tray {
-    pub fn create() -> Result<Self, String> {
+    pub fn create(current: Appearance) -> Result<Self, String> {
         let status = MenuItem::new("Démarrage…", false, None);
         let pair = MenuItem::new("Associer un téléphone…", true, None);
         let devices = MenuItem::new("Téléphones associés…", true, None);
         let quit = MenuItem::new("Quitter Rohy", true, None);
+        let appearance: Vec<_> = Appearance::ALL
+            .into_iter()
+            .map(|choice| {
+                let item = CheckMenuItem::new(choice.label(), true, choice == current, None);
+                (choice, item)
+            })
+            .collect();
+        let appearance_menu = Submenu::new("Apparence", true);
+        for (_, item) in &appearance {
+            appearance_menu
+                .append(item)
+                .map_err(|error| error.to_string())?;
+        }
         let menu = Menu::new();
         menu.append_items(&[
             &status,
             &PredefinedMenuItem::separator(),
             &pair,
             &devices,
+            &appearance_menu,
             &PredefinedMenuItem::separator(),
             &quit,
         ])
@@ -105,6 +122,14 @@ impl Tray {
             pair,
             devices,
             quit,
+            appearance,
         })
+    }
+
+    /// Checks the chosen appearance only (menus toggle a check item on click).
+    pub fn show_appearance(&self, current: Appearance) {
+        for (choice, item) in &self.appearance {
+            item.set_checked(*choice == current);
+        }
     }
 }

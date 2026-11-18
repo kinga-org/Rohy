@@ -45,6 +45,10 @@ Phase 07.
   Code dans `src/ui.rs` ; rendus PNG hors écran pour comparer à la maquette :
   `ROHY_SNAPSHOT_DIR=… cargo test -p rohy-desktop -- --ignored renders`.
 - Options de lancement `--appairage` et `--telephones` : ouvrent la fenêtre dès que le serveur écoute.
+- Mode sombre : palettes claire et sombre (maquette, deuxième rangée), choisies au dessin d'après
+  le thème iced. Sous-menu « Apparence » de l'icône : Système (suit le mode clair/sombre du
+  système, par défaut), Clair, Sombre ; choix gardé dans le fichier `appearance` du dossier de
+  données. Le QR code reste noir sur blanc dans les deux modes.
 
 ## Critères d'acceptation
 Association et synchronisation dans les deux sens avec le Samsung, sur Windows 11 et sur une distribution Linux.

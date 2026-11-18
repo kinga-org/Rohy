@@ -1,5 +1,8 @@
 //! Look of the desktop windows, from the design board "Rohy bureau — refonte":
-//! colors, Inter font, stroke icons, widget styles and the two window layouts.
+//! light and dark palettes, Inter font, stroke icons, widget styles and the two window layouts.
+//!
+//! Colors are picked at draw time from the iced theme, so the windows follow the appearance
+//! chosen in the tray menu, or the system mode, without being rebuilt.
 
 use iced::widget::{
     button, column, container, image, row, rule, scrollable, space, stack, svg, text,
@@ -27,31 +30,106 @@ const fn weight(weight: font::Weight) -> Font {
 /// Window content size on the board.
 pub const WINDOW: (f32, f32) = (440.0, 640.0);
 
-pub mod palette {
-    use iced::Color;
-
-    pub const GROUND: Color = Color::from_rgb8(0xF4, 0xF7, 0xF7);
-    pub const SURFACE: Color = Color::WHITE;
-    pub const LINE: Color = Color::from_rgb8(0xDC, 0xE4, 0xE6);
-    pub const DIVIDER: Color = Color::from_rgb8(0xE6, 0xEC, 0xEE);
-    pub const CONTROL_LINE: Color = Color::from_rgb8(0xC5, 0xD2, 0xD5);
-    pub const INK: Color = Color::from_rgb8(0x12, 0x26, 0x2C);
-    pub const MUTED: Color = Color::from_rgb8(0x4F, 0x63, 0x69);
-    pub const ACCENT: Color = Color::from_rgb8(0x1B, 0x4B, 0x5A);
-    pub const ACCENT_HOVER: Color = Color::from_rgb8(0x12, 0x35, 0x40);
-    pub const ACCENT_SOFT: Color = Color::from_rgb8(0xE8, 0xF0, 0xF2);
-    pub const ACCENT_PRESSED_SOFT: Color = Color::from_rgb8(0xDA, 0xE7, 0xEA);
-    pub const ON_ACCENT_LABEL: Color = Color::from_rgb8(0xCF, 0xE3, 0xE8);
-    pub const ON_ACCENT_BODY: Color = Color::from_rgb8(0xE3, 0xEE, 0xF1);
-    pub const NEUTRAL_SOFT: Color = Color::from_rgb8(0xEE, 0xF1, 0xF2);
-    pub const SUCCESS: Color = Color::from_rgb8(0x1E, 0x8A, 0x55);
-    pub const SUCCESS_TEXT: Color = Color::from_rgb8(0x1E, 0x6B, 0x45);
-    pub const OFFLINE: Color = Color::from_rgb8(0x7A, 0x8C, 0x91);
-    pub const DANGER: Color = Color::from_rgb8(0xA1, 0x35, 0x2B);
-    pub const DANGER_SOFT: Color = Color::from_rgb8(0xFB, 0xED, 0xEB);
+/// Colors of one appearance.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Palette {
+    pub ground: Color,
+    pub surface: Color,
+    pub line: Color,
+    pub divider: Color,
+    pub control_line: Color,
+    pub ink: Color,
+    pub muted: Color,
+    /// Rohy mark disc.
+    pub logo: Color,
+    pub primary: Color,
+    pub primary_hover: Color,
+    /// Accent used for text and icons on the ground or on `accent_soft`.
+    pub accent_text: Color,
+    pub accent_soft: Color,
+    pub accent_pressed_soft: Color,
+    pub neutral_soft: Color,
+    pub success: Color,
+    pub success_text: Color,
+    pub offline: Color,
+    pub danger: Color,
+    pub danger_soft: Color,
 }
 
-use palette::*;
+const fn hex(rgb: u32) -> Color {
+    Color::from_rgb8((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
+}
+
+/// Brand teal: the connection banner keeps it in both appearances.
+const BRAND: Color = hex(0x1B4B5A);
+const ON_BRAND_LABEL: Color = hex(0xCFE3E8);
+const ON_BRAND_BODY: Color = hex(0xE3EEF1);
+
+pub const LIGHT: Palette = Palette {
+    ground: hex(0xF4F7F7),
+    surface: Color::WHITE,
+    line: hex(0xDCE4E6),
+    divider: hex(0xE6ECEE),
+    control_line: hex(0xC5D2D5),
+    ink: hex(0x12262C),
+    muted: hex(0x4F6369),
+    logo: BRAND,
+    primary: BRAND,
+    primary_hover: hex(0x123540),
+    accent_text: BRAND,
+    accent_soft: hex(0xE8F0F2),
+    accent_pressed_soft: hex(0xDAE7EA),
+    neutral_soft: hex(0xEEF1F2),
+    success: hex(0x1E8A55),
+    success_text: hex(0x1E6B45),
+    offline: hex(0x7A8C91),
+    danger: hex(0xA1352B),
+    danger_soft: hex(0xFBEDEB),
+};
+
+pub const DARK: Palette = Palette {
+    ground: hex(0x0F1A1D),
+    surface: hex(0x172429),
+    line: hex(0x26363B),
+    divider: hex(0x223136),
+    control_line: hex(0x34474D),
+    ink: hex(0xE6EEF0),
+    muted: hex(0x9AAEB3),
+    logo: hex(0x2A6B7E),
+    primary: hex(0x2A6B7E),
+    primary_hover: hex(0x33809A),
+    accent_text: hex(0x8CC7D6),
+    accent_soft: hex(0x1E3A42),
+    accent_pressed_soft: hex(0x24464F),
+    neutral_soft: hex(0x213035),
+    success: hex(0x3CB97A),
+    success_text: hex(0x6FD39F),
+    offline: hex(0x6F858B),
+    danger: hex(0xF08A7E),
+    danger_soft: hex(0x3A2220),
+};
+
+/// Palette matching the theme iced resolved for the window.
+pub fn palette(theme: &Theme) -> &'static Palette {
+    if theme.extended_palette().is_dark {
+        &DARK
+    } else {
+        &LIGHT
+    }
+}
+
+/// Chooses one color of the current palette.
+type Pick = fn(&Palette) -> Color;
+
+fn white(_: &Palette) -> Color {
+    Color::WHITE
+}
+
+fn tint(pick: Pick) -> impl Fn(&Theme) -> text::Style {
+    move |theme| text::Style {
+        color: Some(pick(palette(theme))),
+    }
+}
 
 /// Stroke icons (24 × 24, tinted at draw time).
 pub mod icons {
@@ -85,39 +163,44 @@ pub mod icons {
         r#"<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>"#
     );
 
-    /// The Rohy mark in its own colors: two white links on the teal disc.
-    pub const LOGO: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#1B4B5A"/><rect x="7.2" y="15.6" width="13.6" height="8.8" rx="4.4" fill="none" stroke="#fff" stroke-width="2.4"/><rect x="19.2" y="15.6" width="13.6" height="8.8" rx="4.4" fill="none" stroke="#fff" stroke-width="2.4"/></svg>"##;
+    /// The two links of the Rohy mark, drawn over its disc (40 × 40).
+    pub const MARK: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="black" stroke-width="2.4"><rect x="7.2" y="15.6" width="13.6" height="8.8" rx="4.4"/><rect x="19.2" y="15.6" width="13.6" height="8.8" rx="4.4"/></svg>"#;
 }
 
-fn icon<'a, M: 'a>(bytes: &'static [u8], size: f32, color: Color) -> Element<'a, M> {
+fn icon<'a, M: 'a>(bytes: &'static [u8], size: f32, pick: Pick) -> Element<'a, M> {
     svg(svg::Handle::from_memory(bytes))
         .width(size)
         .height(size)
-        .style(move |_, _| svg::Style { color: Some(color) })
+        .style(move |theme, _| svg::Style {
+            color: Some(pick(palette(theme))),
+        })
         .into()
 }
 
-fn logo<'a, M: 'a>(size: f32) -> Element<'a, M> {
-    svg(svg::Handle::from_memory(icons::LOGO))
-        .width(size)
-        .height(size)
+/// Rohy mark: white links on a disc of the `disc` color.
+fn logo<'a, M: 'a>(size: f32, disc: Pick) -> Element<'a, M> {
+    container(icon(icons::MARK, size, white))
+        .center(size)
+        .style(filled(disc, size / 2.0))
         .into()
 }
 
 // Container styles.
 
-fn page(_: &Theme) -> container::Style {
+fn page(theme: &Theme) -> container::Style {
+    let p = palette(theme);
     container::Style {
-        text_color: Some(INK),
-        background: Some(GROUND.into()),
+        text_color: Some(p.ink),
+        background: Some(p.ground.into()),
         ..container::Style::default()
     }
 }
 
-fn card(_: &Theme) -> container::Style {
+fn card(theme: &Theme) -> container::Style {
+    let p = palette(theme);
     container::Style {
-        background: Some(SURFACE.into()),
-        border: Border::default().rounded(16).width(1).color(LINE),
+        background: Some(p.surface.into()),
+        border: Border::default().rounded(16).width(1).color(p.line),
         ..container::Style::default()
     }
 }
@@ -125,30 +208,33 @@ fn card(_: &Theme) -> container::Style {
 fn banner(_: &Theme) -> container::Style {
     container::Style {
         text_color: Some(Color::WHITE),
-        background: Some(ACCENT.into()),
+        background: Some(BRAND.into()),
         border: Border::default().rounded(16),
         ..container::Style::default()
     }
 }
 
-fn filled(color: Color, radius: f32) -> impl Fn(&Theme) -> container::Style {
-    move |_| container::Style {
-        background: Some(color.into()),
+fn filled(pick: Pick, radius: f32) -> impl Fn(&Theme) -> container::Style {
+    move |theme| container::Style {
+        background: Some(pick(palette(theme)).into()),
         border: Border::default().rounded(radius),
         ..container::Style::default()
     }
 }
 
-fn ring(color: Color, radius: f32, width: f32) -> impl Fn(&Theme) -> container::Style {
-    move |_| container::Style {
-        border: Border::default().rounded(radius).width(width).color(color),
+fn ring(pick: Pick, radius: f32, width: f32) -> impl Fn(&Theme) -> container::Style {
+    move |theme| container::Style {
+        border: Border::default()
+            .rounded(radius)
+            .width(width)
+            .color(pick(palette(theme))),
         ..container::Style::default()
     }
 }
 
-fn line(color: Color) -> impl Fn(&Theme) -> rule::Style {
-    move |_| rule::Style {
-        color,
+fn line(pick: Pick) -> impl Fn(&Theme) -> rule::Style {
+    move |theme| rule::Style {
+        color: pick(palette(theme)),
         radius: 0.0.into(),
         fill_mode: rule::FillMode::Full,
         snap: true,
@@ -157,11 +243,12 @@ fn line(color: Color) -> impl Fn(&Theme) -> rule::Style {
 
 // Button styles.
 
-fn primary(_: &Theme, status: button::Status) -> button::Style {
+fn primary(theme: &Theme, status: button::Status) -> button::Style {
+    let p = palette(theme);
     let background = match status {
-        button::Status::Active => ACCENT,
-        button::Status::Hovered | button::Status::Pressed => ACCENT_HOVER,
-        button::Status::Disabled => ACCENT.scale_alpha(0.5),
+        button::Status::Active => p.primary,
+        button::Status::Hovered | button::Status::Pressed => p.primary_hover,
+        button::Status::Disabled => p.primary.scale_alpha(0.5),
     };
     button::Style {
         background: Some(Background::Color(background)),
@@ -171,28 +258,30 @@ fn primary(_: &Theme, status: button::Status) -> button::Style {
     }
 }
 
-fn secondary(_: &Theme, status: button::Status) -> button::Style {
+fn secondary(theme: &Theme, status: button::Status) -> button::Style {
+    let p = palette(theme);
     let background = match status {
-        button::Status::Active | button::Status::Disabled => SURFACE,
-        button::Status::Hovered => ACCENT_SOFT,
-        button::Status::Pressed => ACCENT_PRESSED_SOFT,
+        button::Status::Active | button::Status::Disabled => p.surface,
+        button::Status::Hovered => p.accent_soft,
+        button::Status::Pressed => p.accent_pressed_soft,
     };
     button::Style {
         background: Some(Background::Color(background)),
-        text_color: INK,
-        border: Border::default().rounded(10).width(1).color(CONTROL_LINE),
+        text_color: p.ink,
+        border: Border::default().rounded(10).width(1).color(p.control_line),
         ..button::Style::default()
     }
 }
 
-fn quiet_danger(_: &Theme, status: button::Status) -> button::Style {
+fn quiet_danger(theme: &Theme, status: button::Status) -> button::Style {
+    let p = palette(theme);
     let background = match status {
-        button::Status::Hovered | button::Status::Pressed => Some(DANGER_SOFT.into()),
+        button::Status::Hovered | button::Status::Pressed => Some(p.danger_soft.into()),
         button::Status::Active | button::Status::Disabled => None,
     };
     button::Style {
         background,
-        text_color: DANGER,
+        text_color: p.danger,
         border: Border::default().rounded(8),
         ..button::Style::default()
     }
@@ -202,12 +291,12 @@ fn quiet_danger(_: &Theme, status: button::Status) -> button::Style {
 fn wide_button<'a, M: Clone + 'a>(
     glyph: &'static [u8],
     label: &'a str,
-    color: Color,
+    glyph_color: Pick,
     style: fn(&Theme, button::Status) -> button::Style,
     on_press: M,
 ) -> Element<'a, M> {
     let content = row![
-        icon(glyph, 18.0, color),
+        icon(glyph, 18.0, glyph_color),
         text(label).size(14).font(SEMIBOLD)
     ]
     .spacing(8)
@@ -221,12 +310,12 @@ fn wide_button<'a, M: Clone + 'a>(
         .into()
 }
 
-fn dot<'a, M: 'a>(size: f32, color: Color, hollow: bool) -> Element<'a, M> {
+fn dot<'a, M: 'a>(size: f32, pick: Pick, hollow: bool) -> Element<'a, M> {
     let shape = container(space()).width(size).height(size);
     if hollow {
-        shape.style(ring(color, size / 2.0, 2.0)).into()
+        shape.style(ring(pick, size / 2.0, 2.0)).into()
     } else {
-        shape.style(filled(color, size / 2.0)).into()
+        shape.style(filled(pick, size / 2.0)).into()
     }
 }
 
@@ -246,46 +335,51 @@ pub fn pairing<'a, M: Clone + 'a>(
     on_copy: M,
 ) -> Element<'a, M> {
     let heading = row![
-        logo(40.0),
+        logo(40.0, |p| p.logo),
         column![
             text("Associer un téléphone").size(20).font(BOLD),
             text("Ouvre Rohy sur ton téléphone, puis scanne ce code.")
                 .size(13)
-                .color(MUTED),
+                .style(tint(|p| p.muted)),
         ]
         .spacing(2),
     ]
     .spacing(12)
     .align_y(Alignment::Center);
 
+    // The QR code stays dark on white in both appearances so that every camera reads it.
     let code: Element<'a, M> = match qr {
         Some(handle) => stack![
             image(handle).width(232).height(232),
             container(
-                container(logo(36.0))
+                container(logo(36.0, |_| BRAND))
                     .padding(4)
-                    .style(filled(SURFACE, 12.0))
+                    .style(filled(white, 12.0))
             )
             .center(232),
         ]
         .into(),
-        None => container(text("Le serveur démarre…").size(14).color(MUTED))
-            .center(232)
-            .into(),
+        None => container(
+            text("Le serveur démarre…")
+                .size(14)
+                .style(tint(|p| p.muted)),
+        )
+        .center(232)
+        .into(),
     };
     let waiting = container(
         row![
-            dot(8.0, ACCENT, false),
+            dot(8.0, |p| p.accent_text, false),
             text("En attente du scan…")
                 .size(13)
                 .font(MEDIUM)
-                .color(ACCENT),
+                .style(tint(|p| p.accent_text)),
         ]
         .spacing(10)
         .align_y(Alignment::Center),
     )
     .padding([8, 14])
-    .style(filled(ACCENT_SOFT, 999.0));
+    .style(filled(|p| p.accent_soft, 999.0));
     let code_card = container(
         column![code, waiting]
             .spacing(18)
@@ -297,9 +391,9 @@ pub fn pairing<'a, M: Clone + 'a>(
     .style(card);
 
     let separator = row![
-        rule::horizontal(1).style(line(LINE)),
-        text("Sans caméra").size(12).color(MUTED),
-        rule::horizontal(1).style(line(LINE)),
+        rule::horizontal(1).style(line(|p| p.line)),
+        text("Sans caméra").size(12).style(tint(|p| p.muted)),
+        rule::horizontal(1).style(line(|p| p.line)),
     ]
     .spacing(12)
     .align_y(Alignment::Center);
@@ -310,23 +404,23 @@ pub fn pairing<'a, M: Clone + 'a>(
         (icons::COPY, "Copier le code d'association")
     };
     let copy = column![
-        wide_button(glyph, label, INK, secondary, on_copy),
+        wide_button(glyph, label, |p| p.ink, secondary, on_copy),
         text("Colle-le ensuite dans l'app Rohy du téléphone.")
             .size(12)
-            .color(MUTED)
+            .style(tint(|p| p.muted))
             .width(Length::Fill)
             .align_x(Alignment::Center),
     ]
     .spacing(8);
 
     let note = row![
-        icon(icons::LOCK, 16.0, MUTED),
+        icon(icons::LOCK, 16.0, |p| p.muted),
         text(
             "Code à usage unique, valable tant que cette fenêtre est ouverte. \
              Les échanges sont chiffrés de bout en bout."
         )
         .size(12)
-        .color(MUTED),
+        .style(tint(|p| p.muted)),
     ]
     .spacing(8);
 
@@ -361,15 +455,16 @@ pub fn devices<'a, M: Clone + 'a>(
             let forget = on_forget(device.id.clone());
             list = list.push(device_row(device, forget));
             if index + 1 < count {
-                list =
-                    list.push(container(rule::horizontal(1).style(line(DIVIDER))).padding([0, 16]));
+                list = list.push(
+                    container(rule::horizontal(1).style(line(|p| p.divider))).padding([0, 16]),
+                );
             }
         }
         column![
             text("TÉLÉPHONES ASSOCIÉS")
                 .size(13)
                 .font(SEMIBOLD)
-                .color(MUTED),
+                .style(tint(|p| p.muted)),
             container(scrollable(list)).style(card),
             space().height(Length::Fill),
         ]
@@ -382,13 +477,13 @@ pub fn devices<'a, M: Clone + 'a>(
         wide_button(
             icons::PLUS,
             "Associer un téléphone",
-            Color::WHITE,
+            white,
             primary,
             on_pair
         ),
         text(footer)
             .size(12)
-            .color(MUTED)
+            .style(tint(|p| p.muted))
             .width(Length::Fill)
             .align_x(Alignment::Center),
     ]
@@ -397,7 +492,7 @@ pub fn devices<'a, M: Clone + 'a>(
         bottom = bottom.push(
             text(warning)
                 .size(12)
-                .color(DANGER)
+                .style(tint(|p| p.danger))
                 .width(Length::Fill)
                 .align_x(Alignment::Center),
         );
@@ -412,21 +507,25 @@ fn header_view<'a, M: 'a>(header: Header) -> Element<'a, M> {
         Header::Waiting => (
             "En attente du téléphone".to_string(),
             "Rohy écoute sur le réseau local.".to_string(),
-            dot(10.0, OFFLINE, true),
+            dot(10.0, |p| p.offline, true),
         ),
         Header::Starting => (
             "Démarrage…".to_string(),
             "Rohy prépare le serveur local.".to_string(),
-            dot(10.0, OFFLINE, true),
+            dot(10.0, |p| p.offline, true),
         ),
-        Header::Failed(error) => ("Erreur réseau".to_string(), error, dot(10.0, DANGER, false)),
+        Header::Failed(error) => (
+            "Erreur réseau".to_string(),
+            error,
+            dot(10.0, |p| p.danger, false),
+        ),
     };
     container(
         row![
             marker,
             column![
                 text(title).size(16).font(SEMIBOLD),
-                text(subtitle).size(12).color(MUTED),
+                text(subtitle).size(12).style(tint(|p| p.muted)),
             ]
             .spacing(2),
         ]
@@ -440,9 +539,9 @@ fn header_view<'a, M: 'a>(header: Header) -> Element<'a, M> {
 }
 
 fn connected_banner<'a, M: 'a>(names: String, activity: Option<String>) -> Element<'a, M> {
-    let badge = container(icon(icons::LINK, 22.0, Color::WHITE))
+    let badge = container(icon(icons::LINK, 22.0, white))
         .center(40)
-        .style(filled(Color::WHITE.scale_alpha(0.14), 20.0));
+        .style(filled(|_| Color::WHITE.scale_alpha(0.14), 20.0));
     let mut content = column![
         row![
             badge,
@@ -450,7 +549,7 @@ fn connected_banner<'a, M: 'a>(names: String, activity: Option<String>) -> Eleme
                 text("SYNCHRONISATION ACTIVE")
                     .size(12)
                     .font(MEDIUM)
-                    .color(ON_ACCENT_LABEL),
+                    .color(ON_BRAND_LABEL),
                 text(format!("Connecté à {names}"))
                     .size(19)
                     .font(BOLD)
@@ -464,11 +563,11 @@ fn connected_banner<'a, M: 'a>(names: String, activity: Option<String>) -> Eleme
     .spacing(12);
     if let Some(activity) = activity {
         content = content
-            .push(rule::horizontal(1).style(line(Color::WHITE.scale_alpha(0.16))))
+            .push(rule::horizontal(1).style(line(|_| Color::WHITE.scale_alpha(0.16))))
             .push(
                 row![
-                    icon(icons::RECEIVED, 16.0, ON_ACCENT_BODY),
-                    text(activity).size(13).color(ON_ACCENT_BODY),
+                    icon(icons::RECEIVED, 16.0, |_| ON_BRAND_BODY),
+                    text(activity).size(13).color(ON_BRAND_BODY),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),
@@ -482,15 +581,20 @@ fn connected_banner<'a, M: 'a>(names: String, activity: Option<String>) -> Eleme
 }
 
 fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a, M> {
-    let (tile, glyph, status) = if device.connected {
-        (ACCENT_SOFT, ACCENT, SUCCESS_TEXT)
+    let (tile, glyph, status, marker): (Pick, Pick, Pick, _) = if device.connected {
+        (
+            |p| p.accent_soft,
+            |p| p.accent_text,
+            |p| p.success_text,
+            dot(7.0, |p| p.success, false),
+        )
     } else {
-        (NEUTRAL_SOFT, MUTED, MUTED)
-    };
-    let marker = if device.connected {
-        dot(7.0, SUCCESS, false)
-    } else {
-        dot(7.0, OFFLINE, true)
+        (
+            |p| p.neutral_soft,
+            |p| p.muted,
+            |p| p.muted,
+            dot(7.0, |p| p.offline, true),
+        )
     };
     row![
         container(icon(icons::PHONE, 20.0, glyph))
@@ -498,7 +602,7 @@ fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a,
             .style(filled(tile, 10.0)),
         column![
             text(device.name).size(15).font(SEMIBOLD),
-            row![marker, text(device.detail).size(12).color(status)]
+            row![marker, text(device.detail).size(12).style(tint(status))]
                 .spacing(6)
                 .align_y(Alignment::Center),
         ]
@@ -519,13 +623,13 @@ fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a,
 fn empty_state<'a, M: 'a>() -> Element<'a, M> {
     container(
         column![
-            container(icon(icons::PHONE, 40.0, ACCENT))
+            container(icon(icons::PHONE, 40.0, |p| p.accent_text))
                 .center(88)
-                .style(filled(ACCENT_SOFT, 44.0)),
+                .style(filled(|p| p.accent_soft, 44.0)),
             text("Aucun téléphone associé").size(18).font(BOLD),
             text("Associe ton téléphone Android pour copier d'un côté et coller de l'autre.")
                 .size(14)
-                .color(MUTED)
+                .style(tint(|p| p.muted))
                 .align_x(Alignment::Center),
         ]
         .spacing(16)
@@ -587,51 +691,50 @@ mod tests {
                 );
             }
         }
-        let _: Element<'_, Probe> = devices(
-            Header::Waiting,
-            vec![row(true)],
-            String::new(),
-            None,
-            Probe::Pair,
-            Probe::Forget,
-        );
         assert_eq!(Probe::Forget("a".into()), Probe::Forget("a".into()));
     }
 
     #[test]
-    fn styles_follow_button_status() {
-        let theme = Theme::Light;
+    fn styles_follow_the_theme_and_button_status() {
+        assert_eq!(palette(&Theme::Light), &LIGHT);
+        assert_eq!(palette(&Theme::Dark), &DARK);
         let statuses = [
             button::Status::Active,
             button::Status::Hovered,
             button::Status::Pressed,
             button::Status::Disabled,
         ];
-        for status in statuses {
-            assert_eq!(primary(&theme, status).text_color, Color::WHITE);
-            assert_eq!(secondary(&theme, status).text_color, INK);
-            assert_eq!(quiet_danger(&theme, status).text_color, DANGER);
+        for (theme, p) in [(Theme::Light, LIGHT), (Theme::Dark, DARK)] {
+            for status in statuses {
+                assert_eq!(primary(&theme, status).text_color, Color::WHITE);
+                assert_eq!(secondary(&theme, status).text_color, p.ink);
+                assert_eq!(quiet_danger(&theme, status).text_color, p.danger);
+            }
+            assert_eq!(
+                primary(&theme, button::Status::Hovered).background,
+                Some(Background::Color(p.primary_hover))
+            );
+            assert_eq!(
+                quiet_danger(&theme, button::Status::Active).background,
+                None
+            );
+            assert_eq!(page(&theme).background, Some(p.ground.into()));
+            assert_eq!(card(&theme).border.color, p.line);
+            assert_eq!(banner(&theme).background, Some(BRAND.into()));
+            assert_eq!(
+                ring(|p| p.offline, 5.0, 2.0)(&theme).border.color,
+                p.offline
+            );
+            assert_eq!(
+                filled(|p| p.success, 4.0)(&theme).background,
+                Some(p.success.into())
+            );
+            assert_eq!(line(|p| p.divider)(&theme).color, p.divider);
+            assert_eq!(tint(|p| p.muted)(&theme).color, Some(p.muted));
         }
-        assert_eq!(
-            primary(&theme, button::Status::Hovered).background,
-            Some(Background::Color(ACCENT_HOVER))
-        );
-        assert_eq!(
-            quiet_danger(&theme, button::Status::Active).background,
-            None
-        );
-        assert_eq!(page(&theme).background, Some(GROUND.into()));
-        assert_eq!(card(&theme).border.color, LINE);
-        assert_eq!(banner(&theme).background, Some(ACCENT.into()));
-        assert_eq!(ring(OFFLINE, 5.0, 2.0)(&theme).border.width, 2.0);
-        assert_eq!(
-            filled(SUCCESS, 4.0)(&theme).background,
-            Some(SUCCESS.into())
-        );
-        assert_eq!(line(DIVIDER)(&theme).color, DIVIDER);
     }
 
-    /// Renders each window to PNG for comparison with the design board:
+    /// Renders each window in both appearances to PNG, for comparison with the design board:
     /// `ROHY_SNAPSHOT_DIR=/tmp/rohy cargo test -p rohy-desktop -- --ignored renders`.
     #[test]
     #[ignore = "manual visual check, writes PNG files"]
@@ -642,59 +745,67 @@ mod tests {
         let uri = "rohy://pair?v=1&pk=KvX7alX_NLM5jGQ8bQzTHCEX6zl4KAisrSbv1Axo2WI&t=KvX7alX_NLM5jGQ8bQzTHCEX6zl4KAisrSbv1Axo2WI&n=MacBook-Pro&h=192.168.88.3&p=47823";
         let (w, h, pixels) = crate::images::qr_rgba(uri, 8).unwrap();
         let qr = image::Handle::from_rgba(w, h, pixels);
-        let connected = Header::Connected {
-            names: "SM-S928B".into(),
-            activity: Some("Texte reçu de SM-S928B · il y a 12 s".into()),
-        };
-        let rows = vec![
-            DeviceRow {
-                id: "a".into(),
-                name: "SM-S928B".into(),
-                connected: true,
-                detail: "Connecté · associé le 18 nov.".into(),
-            },
-            DeviceRow {
-                id: "b".into(),
-                name: "Pixel 9".into(),
-                connected: false,
-                detail: "Hors ligne · associé le 2 nov.".into(),
-            },
-        ];
         let footer = "Visible sur le réseau local comme « MacBook-Pro » · port 47823";
-        let screens: Vec<(&str, Element<'_, Probe>)> = vec![
-            ("pairing", pairing(Some(qr), false, Probe::Copy)),
-            (
-                "devices",
-                devices(
-                    connected,
-                    rows,
-                    footer.into(),
-                    None,
-                    Probe::Pair,
-                    Probe::Forget,
-                ),
-            ),
-            (
-                "empty",
-                devices(
-                    Header::Waiting,
-                    vec![],
-                    footer.into(),
-                    None,
-                    Probe::Pair,
-                    Probe::Forget,
-                ),
-            ),
-        ];
-        for (name, element) in screens {
-            let settings = iced::Settings {
-                fonts: FONTS.iter().map(|bytes| (*bytes).into()).collect(),
-                default_font: BODY,
-                ..iced::Settings::default()
+        let screens = || -> Vec<(&str, Element<'_, Probe>)> {
+            let rows = vec![
+                DeviceRow {
+                    id: "a".into(),
+                    name: "SM-S928B".into(),
+                    connected: true,
+                    detail: "Connecté · associé le 18 nov.".into(),
+                },
+                DeviceRow {
+                    id: "b".into(),
+                    name: "Pixel 9".into(),
+                    connected: false,
+                    detail: "Hors ligne · associé le 2 nov.".into(),
+                },
+            ];
+            let connected = Header::Connected {
+                names: "SM-S928B".into(),
+                activity: Some("Texte reçu de SM-S928B · il y a 12 s".into()),
             };
-            let mut simulator = iced_test::Simulator::with_size(settings, WINDOW, element);
-            let snapshot = simulator.snapshot(&Theme::Light).unwrap();
-            assert!(snapshot.matches_image(dir.join(name)).unwrap());
+            vec![
+                ("pairing", pairing(Some(qr.clone()), false, Probe::Copy)),
+                (
+                    "devices",
+                    devices(
+                        connected,
+                        rows,
+                        footer.into(),
+                        None,
+                        Probe::Pair,
+                        Probe::Forget,
+                    ),
+                ),
+                (
+                    "empty",
+                    devices(
+                        Header::Waiting,
+                        vec![],
+                        footer.into(),
+                        None,
+                        Probe::Pair,
+                        Probe::Forget,
+                    ),
+                ),
+            ]
+        };
+        for (suffix, theme) in [("light", Theme::Light), ("dark", Theme::Dark)] {
+            for (name, element) in screens() {
+                let settings = iced::Settings {
+                    fonts: FONTS.iter().map(|bytes| (*bytes).into()).collect(),
+                    default_font: BODY,
+                    ..iced::Settings::default()
+                };
+                let mut simulator = iced_test::Simulator::with_size(settings, WINDOW, element);
+                let snapshot = simulator.snapshot(&theme).unwrap();
+                assert!(
+                    snapshot
+                        .matches_image(dir.join(format!("{name}-{suffix}")))
+                        .unwrap()
+                );
+            }
         }
     }
 
@@ -711,7 +822,7 @@ mod tests {
             icons::PLUS,
             icons::LINK,
             icons::RECEIVED,
-            icons::LOGO,
+            icons::MARK,
         ] {
             assert!(glyph.starts_with(b"<svg") && glyph.ends_with(b"</svg>"));
         }
