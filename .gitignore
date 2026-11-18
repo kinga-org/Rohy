@@ -1,0 +1,22 @@
+.DS_Store
+# Swift
+mac/.build/
+mac/.swiftpm/
+mac/dist/
+*.xcodeproj/xcuserdata/
+# Android / Gradle
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
+*.iml
+*.apk
+*.aab
+*.keystore
+*.jks
+# Env
+.env
+.env.*
+!.env.example
