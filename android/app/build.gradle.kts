@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Release signing comes from the environment (GitHub secrets in .github/workflows/release.yml), never from the
+// repository. Without it, release builds are signed with the debug key: fine to try, not to distribute.
+val releaseKeystore: String? = System.getenv("ROHY_KEYSTORE_PATH")
+
 android {
     namespace = "app.rohy"
     compileSdk = 36
@@ -11,12 +15,24 @@ android {
         applicationId = "app.rohy"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (findProperty("rohyVersionCode") as String?)?.toInt() ?: 1
+        versionName = findProperty("rohyVersion") as String? ?: "0.1.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (releaseKeystore != null) {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("ROHY_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ROHY_KEY_ALIAS")
+                keyPassword = System.getenv("ROHY_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName(if (releaseKeystore != null) "release" else "debug")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
