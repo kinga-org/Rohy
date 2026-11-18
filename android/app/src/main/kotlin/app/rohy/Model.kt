@@ -8,6 +8,9 @@ import app.rohy.core.PairingPayload
 data class PairedMac(val publicKey: ByteArray, val name: String, val hosts: List<String>, val port: Int) {
     val fingerprint: String get() = Fingerprint.of(publicKey)
 
+    /** Name shown to the user: the ".local" Bonjour suffix of host names is noise. */
+    val displayName: String get() = name.removeSuffix(".local").ifEmpty { name }
+
     /** Single-line form stored in preferences: key|port|hosts|name. */
     fun encode(): String = listOf(Base64Url.encode(publicKey), port.toString(), hosts.joinToString(","), name).joinToString("|")
 
