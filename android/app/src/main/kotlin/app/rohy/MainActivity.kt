@@ -1,6 +1,10 @@
 package app.rohy
 
 import android.Manifest
+import android.app.ActivityManager
+import android.app.NotificationManager
+import android.net.Uri
+import android.os.PowerManager
 import android.app.StatusBarManager
 import android.content.ClipboardManager
 import android.content.ComponentName
@@ -33,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -40,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -53,6 +59,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -61,18 +70,20 @@ import app.rohy.core.PairingPayload
 class MainActivity : ComponentActivity() {
     private lateinit var storage: Storage
     private var pairedMac by mutableStateOf<PairedMac?>(null)
+    private var checks by mutableStateOf<List<ReliabilityCheck>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         storage = Storage(this)
         pairedMac = storage.pairedMac
-        requestNotificationPermission()
+        requestStartupPermissions()
         if (pairedMac != null) SyncService.start(this)
         setContent {
             val context = LocalContext.current
             val scheme = if (Build.VERSION.SDK_INT >= 31) dynamicLightColorScheme(context) else lightColorScheme()
             MaterialTheme(colorScheme = scheme) {
                 val status by SyncService.status.collectAsState()
+                val journal by SyncService.journalEvents.collectAsState()
                 HomeScreen(
                     mac = pairedMac,
                     status = status,
@@ -82,7 +93,9 @@ class MainActivity : ComponentActivity() {
                     onReconnect = { SyncService.start(this) },
                     onForget = ::forgetMac,
                     onAddTile = ::requestTile,
-                    onBatterySettings = { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
+                    checks = checks,
+                    onFixCheck = ::fix,
+                    journal = journal,
                 )
             }
         }
@@ -91,6 +104,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         pairedMac = storage.pairedMac
+        checks = reliabilityChecks(readFacts())
     }
 
     private fun scanQrCode() {
@@ -104,7 +118,9 @@ class MainActivity : ComponentActivity() {
 
     private fun pair(code: String?) {
         val payload = code?.trim()?.let(PairingPayload::parse) ?: return toast("Code d'association invalide")
-        pairedMac = PairedMac.from(payload)
+        // Saved here, synchronously: onResume (after the scanner closes) must already see it.
+        storage.pairedMac = PairedMac.from(payload)
+        pairedMac = storage.pairedMac
         SyncService.pair(this, payload.uri)
     }
 
@@ -125,12 +141,53 @@ class MainActivity : ComponentActivity() {
         ) {}
     }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+    private fun requestStartupPermissions() {
+        val missing = buildList {
+            if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
+            if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_MIN_SDK) add(LOCAL_NETWORK_PERMISSION)
+        }.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), REQUEST_STARTUP)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        checks = reliabilityChecks(readFacts())
+        val index = permissions.indexOf(LOCAL_NETWORK_PERMISSION)
+        if (index < 0) return
+        if (grantResults.getOrNull(index) == PackageManager.PERMISSION_GRANTED) {
+            if (storage.pairedMac != null) SyncService.start(this, "accès au réseau local autorisé")
+        } else if (requestCode == REQUEST_LOCAL_NETWORK && !shouldShowRequestPermissionRationale(LOCAL_NETWORK_PERMISSION)) {
+            // Denied for good: only the app settings can grant it now.
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
+    }
+
+    private fun readFacts() = DeviceFacts(
+        manufacturer = Build.MANUFACTURER,
+        localNetworkGranted = if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_MIN_SDK) {
+            checkSelfPermission(LOCAL_NETWORK_PERMISSION) == PackageManager.PERMISSION_GRANTED
+        } else {
+            null
+        },
+        notificationsEnabled = getSystemService(NotificationManager::class.java).areNotificationsEnabled(),
+        ignoringBatteryOptimizations = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName),
+        backgroundRestricted = getSystemService(ActivityManager::class.java).isBackgroundRestricted,
+    )
+
+    private fun fix(id: CheckId) {
+        val packageUri = Uri.parse("package:$packageName")
+        val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri)
+        val intent = when (id) {
+            CheckId.LOCAL_NETWORK -> return requestPermissions(arrayOf(LOCAL_NETWORK_PERMISSION), REQUEST_LOCAL_NETWORK)
+            CheckId.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            CheckId.BATTERY_OPTIMIZATION -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri)
+            CheckId.BACKGROUND_RESTRICTION -> appDetails
+            CheckId.SAMSUNG_NEVER_SLEEPING -> SAMSUNG_BATTERY_SCREENS.map { Intent().setComponent(it) }
+                .firstOrNull { it.resolveActivity(packageManager) != null } ?: appDetails
+            CheckId.RECENTS_LOCK -> return toast("Ouvre les apps récentes, touche l'icône de Rohy, puis « Garder ouvert ».")
+        }
+        runCatching { startActivity(intent) }.onFailure { startActivity(appDetails) }
     }
 
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
@@ -146,7 +203,9 @@ private fun HomeScreen(
     onReconnect: () -> Unit,
     onForget: () -> Unit,
     onAddTile: () -> Unit,
-    onBatterySettings: () -> Unit,
+    checks: List<ReliabilityCheck>,
+    onFixCheck: (CheckId) -> Unit,
+    journal: List<ConnectionEvent>,
 ) {
     Scaffold { padding ->
         Column(
@@ -165,7 +224,7 @@ private fun HomeScreen(
             } else {
                 val icon = when (status) {
                     is SyncStatus.Connected -> Icons.Filled.CheckCircle
-                    is SyncStatus.Rejected -> Icons.Filled.Warning
+                    is SyncStatus.Rejected, is SyncStatus.LocalNetworkDenied -> Icons.Filled.Warning
                     else -> Icons.Filled.Refresh
                 }
                 Section(mac.name, icon) {
@@ -178,7 +237,22 @@ private fun HomeScreen(
                     if (!status.isConnected) {
                         OutlinedButton(onClick = onReconnect, modifier = Modifier.fillMaxWidth()) { Text("Reconnecter") }
                     }
-                    OutlinedButton(onClick = onForget, modifier = Modifier.fillMaxWidth()) {
+                    var confirmForget by remember { mutableStateOf(false) }
+                    if (confirmForget) {
+                        AlertDialog(
+                            onDismissRequest = { confirmForget = false },
+                            title = { Text("Oublier ${mac.name} ?") },
+                            text = { Text("Il faudra scanner à nouveau le QR code du Mac pour le réassocier.") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    confirmForget = false
+                                    onForget()
+                                }) { Text("Oublier") }
+                            },
+                            dismissButton = { TextButton(onClick = { confirmForget = false }) { Text("Annuler") } },
+                        )
+                    }
+                    OutlinedButton(onClick = { confirmForget = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Oublier ce Mac")
@@ -189,13 +263,53 @@ private fun HomeScreen(
                     OutlinedButton(onClick = onAddTile, modifier = Modifier.fillMaxWidth()) { Text("Ajouter la tuile") }
                 }
                 Section("Garder la connexion", Icons.Filled.Settings) {
-                    Text("Sur Samsung, mets Rohy dans « Applis jamais en veille » et la batterie sur « Non restreinte ».")
-                    OutlinedButton(onClick = onBatterySettings, modifier = Modifier.fillMaxWidth()) {
-                        Text("Ouvrir les réglages de batterie")
+                    Text("Android coupe les apps en arrière-plan pour économiser la batterie. Ces réglages gardent Rohy connecté.")
+                    checks.forEach { CheckRow(it, onFixCheck) }
+                }
+                Section("Journal de connexion", Icons.Filled.Info) {
+                    if (journal.isEmpty()) Text("Aucun événement pour l'instant.")
+                    journal.take(20).forEach { event ->
+                        Text(
+                            "${formatTime(event.atMillis)}  ${event.message}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+private const val REQUEST_STARTUP = 1
+private const val REQUEST_LOCAL_NETWORK = 2
+
+private val SAMSUNG_BATTERY_SCREENS = listOf(
+    ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),
+    ComponentName("com.samsung.android.sm", "com.samsung.android.sm.battery.ui.BatteryActivity"),
+)
+
+private fun formatTime(millis: Long): String =
+    SimpleDateFormat("dd/MM HH:mm:ss", Locale.FRANCE).format(Date(millis))
+
+@Composable
+private fun CheckRow(check: ReliabilityCheck, onFix: (CheckId) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val (icon, tint, label) = when (check.state) {
+                CheckState.OK -> Triple(Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary, "OK")
+                CheckState.TO_FIX -> Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "À corriger")
+                CheckState.TO_CHECK -> Triple(Icons.Filled.Info, MaterialTheme.colorScheme.onSurfaceVariant, "À vérifier")
+            }
+            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(check.title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            if (check.state != CheckState.OK) {
+                TextButton(onClick = { onFix(check.id) }) {
+                    Text(if (check.state == CheckState.TO_FIX) "Corriger" else "Ouvrir")
+                }
+            }
+        }
+        Text(check.explanation, style = MaterialTheme.typography.bodySmall)
     }
 }
 

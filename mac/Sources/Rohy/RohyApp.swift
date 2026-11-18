@@ -89,6 +89,7 @@ struct MenuPanel: View {
 
 struct PairingView: View {
     @ObservedObject var model: AppModel
+    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
         VStack(spacing: 16) {
@@ -116,6 +117,7 @@ struct PairingView: View {
         .padding(24)
         .frame(width: 360)
         .onAppear { model.openPairing() }
+        .onChange(of: model.pairingsCompleted) { dismissWindow(id: "pairing") }
         .onDisappear { model.closePairing() }
     }
 }

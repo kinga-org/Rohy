@@ -36,6 +36,16 @@ Installer l'app Android sur un téléphone branché :
 cd android && ./gradlew :app:installDebug
 ```
 
+## Développement sur Mac
+
+`mac/scripts/bundle.sh` signe l'app de façon ad hoc : la signature change à chaque compilation, et macOS
+redemande alors l'accès au trousseau (clé privée de Rohy) au lancement. Pour l'éviter, crée un certificat
+gratuit « Apple Development » (Xcode → Réglages → Comptes) puis :
+
+```bash
+CODESIGN_IDENTITY="Apple Development" mac/scripts/bundle.sh
+```
+
 ## Sécurité
 
 Le protocole est décrit dans [`docs/protocol.md`](docs/protocol.md). Il n'a pas encore été audité.
