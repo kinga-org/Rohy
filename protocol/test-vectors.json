@@ -1,0 +1,33 @@
+{
+  "client_nonce" : "00112233445566778899aabbccddeeff",
+  "client_private" : "a8abababababababababababababababababababababababababababababab6b",
+  "client_public" : "e3712d851a0e5d79b831c5e34ab22b41a198171de209b8b8faca23a11c624859",
+  "description" : "Rohy protocol v1 test vectors. All binary values are lowercase hex.",
+  "frames" : [
+    {
+      "counter" : 0,
+      "direction" : "c2s",
+      "frame" : "0000000000000000000000007b706ca366eea680a0d5a7e166511d8c42d5d1f8606d4a61fb84eee32510d707475ea078d873a34fc2c3c014710e22f0305fb9b7eb0da17d47aca785ca7ce33ce9cfdfb9e5b53e416f37d9d16a83c150d363",
+      "plaintext" : "{\"t\":\"pair\",\"token\":\"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8\"}"
+    },
+    {
+      "counter" : 1,
+      "direction" : "c2s",
+      "frame" : "000000000000000000000001aa226b80e86e72d1a2abe747b1c6484b71bba579e7594f02d27bc2db93dba9afc26fdd4bc9594cab5d54754e4c36b01f47e7873ef83481ec36ebf054705dbab8c76bf9261ed1fe7c5747ca79d2de9ba0db97be163cbd3898e2a004aa80e1639e9ba35a4da47d8415d9499a0eb083ec799bfe98d03df6a2852a0bb3003284dd979e28",
+      "plaintext" : "{\"t\":\"clip\",\"id\":\"7f1c0d2e-0000-4000-8000-000000000001\",\"text\":\"Code wifi : rose-mango-42 éà\",\"sensitive\":false}"
+    },
+    {
+      "counter" : 0,
+      "direction" : "s2c",
+      "frame" : "000000000000000000000000d10d8fab57434c47656bfddeed82f07deab9ba1854caab5f59e8ff39b9369aaa97a1ff357617994e481c1bbc550ffe3a905587bafb47fe",
+      "plaintext" : "{\"t\":\"paired\",\"name\":\"MacBook de test\"}"
+    }
+  ],
+  "key_c2s" : "f7db5f88246167e7020376d3c006625d05c28f1556f2298f83459154d07fd1f9",
+  "key_s2c" : "2fd36b57c8eecd3e5c97d62ac28e6630616e8ac5adc7b8a8b1d91ba559495814",
+  "server_fingerprint" : "4060ecb76ee3468f",
+  "server_nonce" : "ffeeddccbbaa99887766554433221100",
+  "server_private" : "c8cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd4d",
+  "server_public" : "b5bea823d9c9ff576091c54b7c596c0ae296884f0e150290e88455d7fba6126f",
+  "shared_secret" : "235101b705734aae8d4c2d9d0f1baf90bbb2a8c233d831a80d43815bb47ead10"
+}
