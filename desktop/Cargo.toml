@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rohy-core", "crates/rohy-server"]
+members = ["apps/rohy-desktop","crates/rohy-core", "crates/rohy-server"]
 
 [workspace.package]
 edition = "2024"
