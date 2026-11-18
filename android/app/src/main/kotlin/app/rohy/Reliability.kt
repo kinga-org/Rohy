@@ -63,7 +63,7 @@ fun reliabilityChecks(facts: DeviceFacts): List<ReliabilityCheck> = buildList {
         add(
             ReliabilityCheck(
                 CheckId.LOCAL_NETWORK, "Accès au réseau local",
-                "Sans cette autorisation, Android empêche Rohy de joindre le Mac sur le Wi-Fi.",
+                "Sans cette autorisation, Android empêche Rohy de joindre l'ordinateur sur le Wi-Fi.",
                 if (granted) CheckState.OK else CheckState.TO_FIX,
             ),
         )

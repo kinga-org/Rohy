@@ -15,6 +15,8 @@ class ModelTest {
     @Test
     fun pairedMacRoundTripsThroughPreferencesFormat() {
         assertEquals(mac, PairedMac.decode(mac.encode()))
+        assertEquals("Mac-Pro", mac.copy(name = "Mac-Pro.local").displayName)
+        assertEquals(".local", mac.copy(name = ".local").displayName)
         assertEquals(mac.hashCode(), PairedMac.decode(mac.encode()).hashCode())
         assertEquals(Fingerprint.of(mac.publicKey), mac.fingerprint)
         assertEquals(emptyList<String>(), PairedMac.decode(mac.copy(hosts = emptyList()).encode())!!.hosts)
@@ -38,7 +40,7 @@ class ModelTest {
 
     @Test
     fun statusLabelsAreUserFacing() {
-        assertEquals("Aucun Mac associé", SyncStatus.NotPaired.label)
+        assertEquals("Aucun ordinateur associé", SyncStatus.NotPaired.label)
         assertEquals("Synchronisation arrêtée", SyncStatus.Stopped.label)
         assertEquals("Recherche de Mac…", SyncStatus.Searching("Mac").label)
         assertEquals("Connecté à Mac", SyncStatus.Connected("Mac").label)

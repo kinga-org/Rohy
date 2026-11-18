@@ -111,6 +111,7 @@ class SyncService : Service() {
                 if (text.isNullOrEmpty()) return
                 val clip = Clip(text = text)
                 // The session queues the clip until it is authenticated.
+                mutableActivity.value = Activity(System.currentTimeMillis(), sent = true)
                 client?.send(clip) ?: run {
                     outbox.addLast(clip)
                     reconnectNow()
@@ -122,7 +123,8 @@ class SyncService : Service() {
                 main.post { stopSelf() }
             }
             ACTION_FORGET -> {
-                log("Mac oublié depuis l'app")
+                log("Ordinateur oublié depuis l'app")
+                mutableActivity.value = null
                 disconnect()
                 storage.pairedMac = null
                 publish(SyncStatus.NotPaired)
@@ -143,9 +145,9 @@ class SyncService : Service() {
         if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_MIN_SDK &&
             checkSelfPermission(LOCAL_NETWORK_PERMISSION) != PackageManager.PERMISSION_GRANTED
         ) {
-            return publish(SyncStatus.LocalNetworkDenied(mac.name))
+            return publish(SyncStatus.LocalNetworkDenied(mac.displayName))
         }
-        publish(SyncStatus.Searching(mac.name))
+        publish(SyncStatus.Searching(mac.displayName))
         val discovered = MacLocator(this).find(mac.fingerprint)
         Log.i(TAG, "discovered=$discovered stored=${mac.hosts}")
         attempt(mac, connectionCandidates(discovered, mac), 0, ++generation)
@@ -164,10 +166,11 @@ class SyncService : Service() {
             override fun onReady() = executor.execute {
                 if (gen != generation) return@execute
                 backoff.reset()
-                publish(SyncStatus.Connected(mac.name), detail = candidates[index])
+                publish(SyncStatus.Connected(mac.displayName), detail = candidates[index])
             }
 
             override fun onClip(clip: Clip) {
+                mutableActivity.value = Activity(System.currentTimeMillis(), sent = false)
                 main.post { writeClipboard(clip) }
             }
 
@@ -179,7 +182,7 @@ class SyncService : Service() {
                 outbox.addAll(client?.drainPending().orEmpty())
                 client = null
                 when {
-                    code == CloseCode.FORBIDDEN.code -> publish(SyncStatus.Rejected(mac.name))
+                    code == CloseCode.FORBIDDEN.code -> publish(SyncStatus.Rejected(mac.displayName))
                     wasReady -> connect()
                     else -> attempt(mac, candidates, index + 1, gen)
                 }
@@ -197,7 +200,7 @@ class SyncService : Service() {
 
     private fun scheduleRetry(mac: PairedMac) {
         val delay = backoff.nextDelayMillis()
-        publish(SyncStatus.Waiting(mac.name, delay / 1000))
+        publish(SyncStatus.Waiting(mac.displayName, delay / 1000))
         retry = executor.schedule({ connect() }, delay, TimeUnit.MILLISECONDS)
     }
 
@@ -240,7 +243,7 @@ class SyncService : Service() {
 
     private fun createChannel() {
         val channel = NotificationChannel(CHANNEL_ID, "Synchronisation", NotificationManager.IMPORTANCE_LOW)
-        channel.description = "Connexion au Mac"
+        channel.description = "Connexion à l'ordinateur"
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
@@ -281,6 +284,9 @@ class SyncService : Service() {
         val status: StateFlow<SyncStatus> = mutableStatus
         private val mutableJournal = MutableStateFlow<List<ConnectionEvent>>(emptyList())
         val journalEvents: StateFlow<List<ConnectionEvent>> = mutableJournal
+        private val mutableActivity = MutableStateFlow<Activity?>(null)
+        /** Last clip sent or received during this run of the app. */
+        val lastActivity: StateFlow<Activity?> = mutableActivity
 
         fun start(context: Context, reason: String = "app ouverte") =
             launch(context, ACTION_START) { putExtra(EXTRA_REASON, reason) }

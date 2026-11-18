@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Rohy" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Rohy" parent="android:Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
 
     <style name="Theme.Rohy.Transparent" parent="android:Theme.Translucent.NoTitleBar">
         <item name="android:windowAnimationStyle">@null</item>

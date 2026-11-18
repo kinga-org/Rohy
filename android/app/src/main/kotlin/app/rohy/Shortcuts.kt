@@ -15,13 +15,13 @@ import android.widget.Toast
 internal fun Context.sendToMac(text: String?) {
     when {
         Storage(this).pairedMac == null -> {
-            Toast.makeText(this, "Associe d'abord un Mac dans Rohy", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Associe d'abord un ordinateur dans Rohy", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
         text.isNullOrEmpty() -> Toast.makeText(this, "Presse-papiers vide", Toast.LENGTH_SHORT).show()
         else -> {
             SyncService.send(this, text)
-            Toast.makeText(this, "Envoi vers le Mac", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Envoi vers l'ordinateur", Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -66,8 +66,13 @@ class ProcessTextActivity : Activity() {
 class ClipTileService : TileService() {
     override fun onStartListening() {
         super.onStartListening()
+        val computer = Storage(this).pairedMac?.displayName
         qsTile?.apply {
-            state = if (Storage(this@ClipTileService).pairedMac == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+            state = if (computer == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+            // One UI shows the label and subtitle only on large tiles.
+            label = "Envoyer"
+            subtitle = computer ?: "Aucun ordinateur"
+            contentDescription = computer?.let { "Envoyer le presse-papiers à $it" } ?: "Rohy : aucun ordinateur associé"
             updateTile()
         }
     }
