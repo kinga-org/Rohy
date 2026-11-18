@@ -111,6 +111,7 @@ class SyncService : Service() {
                 if (text.isNullOrEmpty()) return
                 val clip = Clip(text = text)
                 // The session queues the clip until it is authenticated.
+                mutableActivity.value = Activity(System.currentTimeMillis(), sent = true)
                 client?.send(clip) ?: run {
                     outbox.addLast(clip)
                     reconnectNow()
@@ -122,7 +123,8 @@ class SyncService : Service() {
                 main.post { stopSelf() }
             }
             ACTION_FORGET -> {
-                log("Mac oublié depuis l'app")
+                log("Ordinateur oublié depuis l'app")
+                mutableActivity.value = null
                 disconnect()
                 storage.pairedMac = null
                 publish(SyncStatus.NotPaired)
@@ -168,6 +170,7 @@ class SyncService : Service() {
             }
 
             override fun onClip(clip: Clip) {
+                mutableActivity.value = Activity(System.currentTimeMillis(), sent = false)
                 main.post { writeClipboard(clip) }
             }
 
@@ -240,7 +243,7 @@ class SyncService : Service() {
 
     private fun createChannel() {
         val channel = NotificationChannel(CHANNEL_ID, "Synchronisation", NotificationManager.IMPORTANCE_LOW)
-        channel.description = "Connexion au Mac"
+        channel.description = "Connexion à l'ordinateur"
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
@@ -281,6 +284,9 @@ class SyncService : Service() {
         val status: StateFlow<SyncStatus> = mutableStatus
         private val mutableJournal = MutableStateFlow<List<ConnectionEvent>>(emptyList())
         val journalEvents: StateFlow<List<ConnectionEvent>> = mutableJournal
+        private val mutableActivity = MutableStateFlow<Activity?>(null)
+        /** Last clip sent or received during this run of the app. */
+        val lastActivity: StateFlow<Activity?> = mutableActivity
 
         fun start(context: Context, reason: String = "app ouverte") =
             launch(context, ACTION_START) { putExtra(EXTRA_REASON, reason) }

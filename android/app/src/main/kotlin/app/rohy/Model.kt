@@ -40,7 +40,7 @@ sealed interface SyncStatus {
 
     val label: String
         get() = when (this) {
-            NotPaired -> "Aucun Mac associé"
+            NotPaired -> "Aucun ordinateur associé"
             Stopped -> "Synchronisation arrêtée"
             is Searching -> "Recherche de $macName…"
             is Connected -> "Connecté à $macName"

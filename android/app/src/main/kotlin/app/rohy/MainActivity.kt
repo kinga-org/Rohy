@@ -16,56 +16,25 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import app.rohy.core.PairingPayload
+import kotlinx.coroutines.delay
+
+/** Screens reached from the home screen. */
+private enum class Screen { HOME, RELIABILITY, JOURNAL }
 
 class MainActivity : ComponentActivity() {
     private lateinit var storage: Storage
@@ -78,25 +47,44 @@ class MainActivity : ComponentActivity() {
         pairedMac = storage.pairedMac
         requestStartupPermissions()
         if (pairedMac != null) SyncService.start(this)
+        enableEdgeToEdge()
         setContent {
-            val context = LocalContext.current
-            val scheme = if (Build.VERSION.SDK_INT >= 31) dynamicLightColorScheme(context) else lightColorScheme()
-            MaterialTheme(colorScheme = scheme) {
+            RohyTheme {
                 val status by SyncService.status.collectAsState()
                 val journal by SyncService.journalEvents.collectAsState()
-                HomeScreen(
-                    mac = pairedMac,
-                    status = status,
-                    onScan = ::scanQrCode,
-                    onPasteCode = ::pairFromClipboard,
-                    onSendClipboard = { sendToMac(readClipboard()) },
-                    onReconnect = { SyncService.start(this) },
-                    onForget = ::forgetMac,
-                    onAddTile = ::requestTile,
-                    checks = checks,
-                    onFixCheck = ::fix,
-                    journal = journal,
-                )
+                val activity by SyncService.lastActivity.collectAsState()
+                var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        delay(15_000)
+                        now = System.currentTimeMillis()
+                    }
+                }
+                var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
+                BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
+                val mac = pairedMac
+                when {
+                    mac == null -> OnboardingScreen(onScan = ::scanQrCode, onPasteCode = ::pairFromClipboard)
+                    screen == Screen.RELIABILITY -> ReliabilityScreen(checks, ::fix) { screen = Screen.HOME }
+                    screen == Screen.JOURNAL ->
+                        JournalScreen(journalDays(journal, System.currentTimeMillis())) { screen = Screen.HOME }
+                    else -> HomeScreen(
+                        content = HomeContent(
+                            computer = mac.name,
+                            pairedDetail = pairedDetail(storage.pairedAtMillis, mac.hosts),
+                            header = homeHeader(status, mac.name),
+                            activity = activity?.describe(now),
+                            reliability = summarize(checks),
+                        ),
+                        onSend = { sendToMac(readClipboard()) },
+                        onReconnect = { SyncService.start(this, "reconnexion depuis l'app") },
+                        onAllowLocalNetwork = { fix(CheckId.LOCAL_NETWORK) },
+                        onAddTile = ::requestTile,
+                        onOpenReliability = { screen = Screen.RELIABILITY },
+                        onOpenJournal = { screen = Screen.JOURNAL },
+                        onForget = ::forgetMac,
+                    )
+                }
             }
         }
     }
@@ -134,7 +122,7 @@ class MainActivity : ComponentActivity() {
             ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)?.toString()
 
     private fun requestTile() {
-        if (Build.VERSION.SDK_INT < 33) return toast("Ajoute la tuile « Envoyer au Mac » depuis l'édition des réglages rapides")
+        if (Build.VERSION.SDK_INT < 33) return toast("Ajoute la tuile « Envoyer à l'ordinateur » depuis l'édition des réglages rapides")
         getSystemService(StatusBarManager::class.java).requestAddTileService(
             ComponentName(this, ClipTileService::class.java), getString(R.string.tile_label),
             Icon.createWithResource(this, R.drawable.ic_link), mainExecutor,
@@ -193,93 +181,6 @@ class MainActivity : ComponentActivity() {
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 }
 
-@Composable
-private fun HomeScreen(
-    mac: PairedMac?,
-    status: SyncStatus,
-    onScan: () -> Unit,
-    onPasteCode: () -> Unit,
-    onSendClipboard: () -> Unit,
-    onReconnect: () -> Unit,
-    onForget: () -> Unit,
-    onAddTile: () -> Unit,
-    checks: List<ReliabilityCheck>,
-    onFixCheck: (CheckId) -> Unit,
-    journal: List<ConnectionEvent>,
-) {
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text("Rohy", style = MaterialTheme.typography.headlineMedium)
-            if (mac == null) {
-                Section("Associer un Mac", Icons.Filled.Info) {
-                    Text("Sur le Mac, ouvre Rohy dans la barre de menus puis « Associer un téléphone ».")
-                    Button(onClick = onScan, modifier = Modifier.fillMaxWidth()) { Text("Scanner le QR code") }
-                    OutlinedButton(onClick = onPasteCode, modifier = Modifier.fillMaxWidth()) {
-                        Text("Coller le code d'association")
-                    }
-                }
-            } else {
-                val icon = when (status) {
-                    is SyncStatus.Connected -> Icons.Filled.CheckCircle
-                    is SyncStatus.Rejected, is SyncStatus.LocalNetworkDenied -> Icons.Filled.Warning
-                    else -> Icons.Filled.Refresh
-                }
-                Section(mac.name, icon) {
-                    Text(if (status == SyncStatus.NotPaired) SyncStatus.Stopped.label else status.label)
-                    Button(onClick = onSendClipboard, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Envoyer le presse-papiers au Mac")
-                    }
-                    if (!status.isConnected) {
-                        OutlinedButton(onClick = onReconnect, modifier = Modifier.fillMaxWidth()) { Text("Reconnecter") }
-                    }
-                    var confirmForget by remember { mutableStateOf(false) }
-                    if (confirmForget) {
-                        AlertDialog(
-                            onDismissRequest = { confirmForget = false },
-                            title = { Text("Oublier ${mac.name} ?") },
-                            text = { Text("Il faudra scanner à nouveau le QR code du Mac pour le réassocier.") },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    confirmForget = false
-                                    onForget()
-                                }) { Text("Oublier") }
-                            },
-                            dismissButton = { TextButton(onClick = { confirmForget = false }) { Text("Annuler") } },
-                        )
-                    }
-                    OutlinedButton(onClick = { confirmForget = true }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Oublier ce Mac")
-                    }
-                }
-                Section("Envoyer depuis le téléphone", Icons.Filled.Share) {
-                    Text("Sélectionne un texte puis choisis « Envoyer au Mac » dans le menu (souvent sous ⋮). Ou copie un texte, puis touche la tuile « Envoyer au Mac » des réglages rapides, ou l'action de la notification. Tu peux aussi sélectionner un texte et choisir Partager → Mac (Rohy).")
-                    OutlinedButton(onClick = onAddTile, modifier = Modifier.fillMaxWidth()) { Text("Ajouter la tuile") }
-                }
-                Section("Garder la connexion", Icons.Filled.Settings) {
-                    Text("Android coupe les apps en arrière-plan pour économiser la batterie. Ces réglages gardent Rohy connecté.")
-                    checks.forEach { CheckRow(it, onFixCheck) }
-                }
-                Section("Journal de connexion", Icons.Filled.Info) {
-                    if (journal.isEmpty()) Text("Aucun événement pour l'instant.")
-                    journal.take(20).forEach { event ->
-                        Text(
-                            "${formatTime(event.atMillis)}  ${event.message}",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
 private const val REQUEST_STARTUP = 1
 private const val REQUEST_LOCAL_NETWORK = 2
 
@@ -287,42 +188,3 @@ private val SAMSUNG_BATTERY_SCREENS = listOf(
     ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),
     ComponentName("com.samsung.android.sm", "com.samsung.android.sm.battery.ui.BatteryActivity"),
 )
-
-private fun formatTime(millis: Long): String =
-    SimpleDateFormat("dd/MM HH:mm:ss", Locale.FRANCE).format(Date(millis))
-
-@Composable
-private fun CheckRow(check: ReliabilityCheck, onFix: (CheckId) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val (icon, tint, label) = when (check.state) {
-                CheckState.OK -> Triple(Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary, "OK")
-                CheckState.TO_FIX -> Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "À corriger")
-                CheckState.TO_CHECK -> Triple(Icons.Filled.Info, MaterialTheme.colorScheme.onSurfaceVariant, "À vérifier")
-            }
-            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(check.title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            if (check.state != CheckState.OK) {
-                TextButton(onClick = { onFix(check.id) }) {
-                    Text(if (check.state == CheckState.TO_FIX) "Corriger" else "Ouvrir")
-                }
-            }
-        }
-        Text(check.explanation, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable
-private fun Section(title: String, icon: ImageVector, content: @Composable () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(title, style = MaterialTheme.typography.titleMedium)
-            }
-            content()
-        }
-    }
-}

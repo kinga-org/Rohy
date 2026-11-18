@@ -15,13 +15,13 @@ import android.widget.Toast
 internal fun Context.sendToMac(text: String?) {
     when {
         Storage(this).pairedMac == null -> {
-            Toast.makeText(this, "Associe d'abord un Mac dans Rohy", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Associe d'abord un ordinateur dans Rohy", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
         text.isNullOrEmpty() -> Toast.makeText(this, "Presse-papiers vide", Toast.LENGTH_SHORT).show()
         else -> {
             SyncService.send(this, text)
-            Toast.makeText(this, "Envoi vers le Mac", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Envoi vers l'ordinateur", Toast.LENGTH_SHORT).show()
         }
     }
 }

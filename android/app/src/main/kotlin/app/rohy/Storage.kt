@@ -21,8 +21,16 @@ class Storage(context: Context) {
     var pairedMac: PairedMac?
         get() = PairedMac.decode(prefs.getString(KEY_MAC, null))
         set(value) {
-            prefs.edit().apply { if (value == null) remove(KEY_MAC) else putString(KEY_MAC, value.encode()) }.apply()
+            val samePairing = value != null && pairedMac?.publicKey?.contentEquals(value.publicKey) == true
+            prefs.edit().apply {
+                if (value == null) remove(KEY_MAC).remove(KEY_PAIRED_AT) else putString(KEY_MAC, value.encode())
+                if (value != null && !samePairing) putLong(KEY_PAIRED_AT, System.currentTimeMillis())
+            }.apply()
         }
+
+    /** When the current computer was paired; null for pairings made before this was recorded. */
+    val pairedAtMillis: Long?
+        get() = prefs.getLong(KEY_PAIRED_AT, 0).takeIf { it > 0 }
 
     var journalText: String?
         get() = prefs.getString(KEY_JOURNAL, null)
@@ -65,6 +73,7 @@ class Storage(context: Context) {
 
     private companion object {
         const val KEY_MAC = "paired_mac"
+        const val KEY_PAIRED_AT = "paired_at"
         const val KEY_IDENTITY = "identity"
         const val KEY_JOURNAL = "journal"
         const val KEY_ALIAS = "rohy_identity_wrap"
