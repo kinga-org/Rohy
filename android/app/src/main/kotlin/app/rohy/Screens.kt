@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
@@ -54,6 +55,9 @@ import java.util.Date
 import java.util.Locale
 
 // Building blocks.
+
+/** Lets long host names ("RAHERINO-MacBook-Pro") wrap after their hyphens instead of mid-word. */
+private fun breakable(name: String) = name.replace("-", "-\u200B")
 
 @Composable
 private fun Logo(size: Dp) {
@@ -264,7 +268,7 @@ fun HomeScreen(
         }
         when (val header = content.header) {
             is HomeHeader.Connected -> ConnectedBanner(header.computer, content.activity)
-            is HomeHeader.Unreachable -> UnreachableCard(header, onReconnect)
+            is HomeHeader.Unreachable -> UnreachableCard(header, onReconnect, onPairAgain = onForget)
             is HomeHeader.LocalNetworkDenied -> {
                 UnreachableCard(HomeHeader.Unreachable("${header.computer} injoignable", "Accès au réseau local nécessaire", false), onReconnect)
                 LocalNetworkAlert(onAllowLocalNetwork)
@@ -293,7 +297,7 @@ private fun ConnectedBanner(computer: String, activity: String?) {
             IconTile(RohyIcons.Computer, Color.White.copy(alpha = 0.14f), Color.White, size = 44.dp, radius = 22.dp, iconSize = 22.dp)
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("SYNCHRONISATION ACTIVE", style = RohyText.label, color = OnBrandLabel)
-                Text("Connecté à $computer", style = RohyText.bannerTitle, color = Color.White, modifier = Modifier.semantics { heading() })
+                Text(breakable("Connecté à $computer"), style = RohyText.bannerTitle, color = Color.White, modifier = Modifier.semantics { heading() })
             }
         }
         if (activity != null) {
@@ -308,22 +312,27 @@ private fun ConnectedBanner(computer: String, activity: String?) {
 }
 
 @Composable
-private fun UnreachableCard(header: HomeHeader.Unreachable, onReconnect: () -> Unit) {
+private fun UnreachableCard(header: HomeHeader.Unreachable, onReconnect: () -> Unit, onPairAgain: () -> Unit = {}) {
     val c = rohyColors
     Card {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconTile(RohyIcons.WifiOff, c.neutralSoft, c.muted, size = 44.dp, radius = 22.dp, iconSize = 22.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(header.title, style = RohyText.cardTitle, color = c.ink, modifier = Modifier.semantics { heading() })
+                    Text(breakable(header.title), style = RohyText.cardTitle, color = c.ink, modifier = Modifier.semantics { heading() })
                     Text(header.detail, style = RohyText.small, color = c.muted)
                 }
             }
             Text(
-                "Vérifie que l'ordinateur est allumé, que Rohy y tourne et que vous êtes sur le même Wi-Fi.",
+                if (header.rejected) {
+                    "Sur l'ordinateur, l'association a été oubliée. Associe-les à nouveau avec un nouveau QR code."
+                } else {
+                    "Vérifie que l'ordinateur est allumé, que Rohy y tourne et que vous êtes sur le même Wi-Fi."
+                },
                 style = RohyText.small.copy(fontSize = RohyText.body.fontSize.times(0.93f)), color = c.muted,
             )
             if (header.canReconnect) SecondaryButton("Reconnecter maintenant", RohyIcons.Refresh, onReconnect, height = 48.dp)
+            if (header.rejected) SecondaryButton("Associer à nouveau", RohyIcons.Scan, onPairAgain, height = 48.dp)
         }
     }
 }
@@ -418,7 +427,7 @@ private fun ComputerCard(computer: String, detail: String, onForget: () -> Unit)
             Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconTile(RohyIcons.Computer, c.neutralSoft, c.muted)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(computer, style = RohyText.rowTitle, color = c.ink)
+                    Text(computer, style = RohyText.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(detail, style = RohyText.small, color = c.muted)
                 }
                 TextButton(onClick = { confirm = true }) { Text("Oublier", style = RohyText.smallStrong, color = c.danger) }

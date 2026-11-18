@@ -70,9 +70,9 @@ class MainActivity : ComponentActivity() {
                         JournalScreen(journalDays(journal, System.currentTimeMillis())) { screen = Screen.HOME }
                     else -> HomeScreen(
                         content = HomeContent(
-                            computer = mac.name,
+                            computer = mac.displayName,
                             pairedDetail = pairedDetail(storage.pairedAtMillis, mac.hosts),
-                            header = homeHeader(status, mac.name),
+                            header = homeHeader(status, mac.displayName),
                             activity = activity?.describe(now),
                             reliability = summarize(checks),
                         ),

@@ -82,14 +82,20 @@ enum class EventKind { CONNECTED, SEARCHING, PROBLEM, INFO }
 fun eventKind(message: String): EventKind = when {
     message.startsWith("Connecté") -> EventKind.CONNECTED
     message.startsWith("Recherche") || message.contains("nouvel essai") -> EventKind.SEARCHING
-    listOf("injoignable", "refusé", "perdue", "Autorise", "Échec", "impossible").any { message.contains(it) } -> EventKind.PROBLEM
+    listOf("injoignable", "refusé", "perdu", "Autorise", "Échec", "impossible").any { message.contains(it) } -> EventKind.PROBLEM
     else -> EventKind.INFO
 }
 
 /** What the top of the home screen shows for a connection status. */
 sealed interface HomeHeader {
     data class Connected(val computer: String) : HomeHeader
-    data class Unreachable(val title: String, val detail: String, val canReconnect: Boolean) : HomeHeader
+    /** [rejected]: the computer no longer knows this phone, only a new pairing helps. */
+    data class Unreachable(
+        val title: String,
+        val detail: String,
+        val canReconnect: Boolean,
+        val rejected: Boolean = false,
+    ) : HomeHeader
     data class LocalNetworkDenied(val computer: String) : HomeHeader
 }
 
@@ -103,7 +109,8 @@ fun homeHeader(status: SyncStatus, computer: String): HomeHeader = when (status)
         "${status.macName} injoignable", "Nouvel essai dans ${status.retryInSeconds} s", canReconnect = true,
     )
     is SyncStatus.Rejected -> HomeHeader.Unreachable(
-        "${status.macName} a refusé la connexion", "Oublie-le puis associe-le à nouveau.", canReconnect = false,
+        "${status.macName} a refusé la connexion", "Il ne reconnaît plus ce téléphone.", canReconnect = false,
+        rejected = true,
     )
     SyncStatus.Stopped, SyncStatus.NotPaired -> HomeHeader.Unreachable(
         "Synchronisation arrêtée", "Relance-la pour rejoindre $computer.", canReconnect = true,

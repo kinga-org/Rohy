@@ -72,6 +72,7 @@ class HomeStateTest {
         assertEquals(EventKind.SEARCHING, eventKind("Mac injoignable, nouvel essai dans 8 s"))
         assertEquals(EventKind.PROBLEM, eventKind("Connexion perdue (code=-, EOF)"))
         assertEquals(EventKind.PROBLEM, eventKind("Mac a refusé la connexion. Associe-le à nouveau."))
+        assertEquals(EventKind.PROBLEM, eventKind("Réseau perdu"))
         assertEquals(EventKind.INFO, eventKind("Wi-Fi retrouvé"))
     }
 
@@ -84,7 +85,10 @@ class HomeStateTest {
         assertEquals("Nouvel essai dans 8 s", waiting.detail)
         assertTrue(waiting.canReconnect)
         assertFalse((homeHeader(SyncStatus.Searching("Mac"), "Mac") as HomeHeader.Unreachable).canReconnect)
-        assertFalse((homeHeader(SyncStatus.Rejected("Mac"), "Mac") as HomeHeader.Unreachable).canReconnect)
+        val rejected = homeHeader(SyncStatus.Rejected("Mac"), "Mac") as HomeHeader.Unreachable
+        assertFalse(rejected.canReconnect)
+        assertTrue(rejected.rejected)
+        assertFalse(waiting.rejected)
         val stopped = homeHeader(SyncStatus.Stopped, "Mac") as HomeHeader.Unreachable
         assertEquals("Synchronisation arrêtée", stopped.title)
         assertTrue(stopped.canReconnect)

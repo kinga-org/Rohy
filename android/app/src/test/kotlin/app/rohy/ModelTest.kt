@@ -15,6 +15,8 @@ class ModelTest {
     @Test
     fun pairedMacRoundTripsThroughPreferencesFormat() {
         assertEquals(mac, PairedMac.decode(mac.encode()))
+        assertEquals("Mac-Pro", mac.copy(name = "Mac-Pro.local").displayName)
+        assertEquals(".local", mac.copy(name = ".local").displayName)
         assertEquals(mac.hashCode(), PairedMac.decode(mac.encode()).hashCode())
         assertEquals(Fingerprint.of(mac.publicKey), mac.fingerprint)
         assertEquals(emptyList<String>(), PairedMac.decode(mac.copy(hosts = emptyList()).encode())!!.hosts)
