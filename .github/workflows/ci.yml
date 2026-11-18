@@ -25,5 +25,22 @@ jobs:
           packages: "platforms;android-36 build-tools;36.0.0"
       - name: Mac (Swift tests + coverage)
         run: scripts/check-mac.sh
-      - name: Android (Kotlin tests + interop + Kover + build)
+      - name: Android (Kotlin tests + interop with Swift and Rust servers + Kover + build)
         run: scripts/check-android.sh
+
+  desktop:
+    # Rust core and server for the Windows/Linux app.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt, llvm-tools-preview
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Desktop (fmt + clippy + tests + coverage)
+        shell: bash
+        run: scripts/check-desktop.sh

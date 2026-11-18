@@ -9,3 +9,10 @@ if [ -z "${ROHY_HARNESS:-}" ]; then
 fi
 cd "$ROOT/android"
 ./gradlew --console=plain ${GRADLE_ARGS:-} :core:test :core:koverVerify :core:koverLog :app:testDebugUnitTest :app:assembleDebug
+
+# Same Kotlin interop test against the Rust server (desktop), when a Rust toolchain is available.
+if command -v cargo >/dev/null 2>&1; then
+  (cd "$ROOT/desktop" && cargo build --quiet -p rohy-server --bin rohy-harness)
+  ROHY_HARNESS="$ROOT/desktop/target/debug/rohy-harness" \
+    ./gradlew --console=plain ${GRADLE_ARGS:-} :core:test --tests app.rohy.core.InteropTest --rerun
+fi

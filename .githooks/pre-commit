@@ -12,6 +12,9 @@ fi
 if echo "$STAGED" | grep -qE '^(mac/|protocol/)'; then
   (cd "$ROOT/mac" && swift build --quiet && swift test --quiet)
 fi
+if echo "$STAGED" | grep -qE '^(desktop/|protocol/)'; then
+  (cd "$ROOT/desktop" && cargo fmt --all -- --check && cargo test --quiet --workspace)
+fi
 if echo "$STAGED" | grep -qE '^(android/|protocol/)'; then
   source "$ROOT/scripts/env.sh"
   (cd "$ROOT/android" && ./gradlew --quiet --console=plain :core:test :app:testDebugUnitTest)

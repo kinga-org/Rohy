@@ -13,12 +13,15 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 | [04 — Texte Android → Mac](../phases/04-android-vers-mac.md) | Fonctionne | Mesurer la latence de la tuile |
 | [05 — Prototype OTP via appareil compagnon](../phases/05-prototype-otp-compagnon.md) | À faire | Tout |
 | [06 — Fiabilité et accueil Samsung](../phases/06-fiabilite-samsung.md) | En cours | Test d'endurance de 24 h |
+| [07 — Cœur Rust et serveur pour le bureau](../phases/07-coeur-rust.md) | En cours | CI Ubuntu et Windows au vert |
+| [08 — App de bureau Windows et Linux (iced)](../phases/08-app-bureau-iced.md) | À faire | Tout |
+| [09 — Plusieurs ordinateurs par téléphone](../phases/09-plusieurs-ordinateurs.md) | À faire | Tout |
 
 ## Backlog (docs/features)
 
 | Fiche | Statut |
 |---|---|
-| [Windows et Linux](../features/windows-linux.md) | Choix technique fait (Rust + iced), après stabilisation |
+| [Windows et Linux](../features/windows-linux.md) | Promue en phases 07, 08 et 09 |
 | [Codes de vérification](../features/codes-verification.md) | Dépend de la phase 05 |
 | [Historique](../features/historique.md) | Après le MVP |
 | [Images et fichiers](../features/images-fichiers.md) | Après le MVP |
@@ -26,9 +29,10 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Prochaines étapes
 
-1. Phase 06 : test d'endurance de 24 h, téléphone débranché et écran éteint (journal de connexion).
-2. Phase 05 : prototype de l'association `CompanionDeviceManager` sur le Samsung (codes de vérification).
-3. Gérer plusieurs ordinateurs par téléphone (prérequis de Windows et Linux).
+1. Phase 07 : CI Ubuntu et Windows au vert.
+2. Phase 08 : app iced (icône de barre des tâches, appairage, presse-papiers par système).
+3. Phase 06 : test d'endurance de 24 h, téléphone débranché.
+4. Phase 09 : plusieurs ordinateurs par téléphone.
 
 ## Journal
 
