@@ -38,6 +38,13 @@ Phase 07.
 - Essai avec le Galaxy S24 Ultra (18/11, 16:49) : association par QR code avec l'app iced sur le Mac,
   connexion établie (port de repli 51981), synchronisation confirmée par l'utilisateur.
   Retour : fonctionne, mais le design des fenêtres est à revoir.
+- Refonte visuelle d'après la maquette « Rohy bureau — refonte » (canvas Design,
+  https://claude.ai/artifact/StchZXp6RPY4E4Nv2CwSc9) : vert foncé #1B4B5A, police Inter embarquée
+  (OFL, `assets/fonts/`), cartes arrondies, icônes SVG au trait, QR code en correction H avec le logo
+  au centre, bannière « Connecté à … » avec la dernière activité, liste des téléphones, état vide.
+  Code dans `src/ui.rs` ; rendus PNG hors écran pour comparer à la maquette :
+  `ROHY_SNAPSHOT_DIR=… cargo test -p rohy-desktop -- --ignored renders`.
+- Options de lancement `--appairage` et `--telephones` : ouvrent la fenêtre dès que le serveur écoute.
 
 ## Critères d'acceptation
 Association et synchronisation dans les deux sens avec le Samsung, sur Windows 11 et sur une distribution Linux.

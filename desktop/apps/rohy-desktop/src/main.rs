@@ -6,13 +6,14 @@ mod images;
 mod platform;
 mod service;
 mod state;
+mod ui;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use iced::widget::{button, column, container, image, row, scrollable, text};
-use iced::{Element, Length, Subscription, Task, window};
+use iced::widget::image;
+use iced::{Element, Subscription, Task, Theme, window};
 use rohy_core::crypto::Identity;
 use rohy_core::pairing::PairingPayload;
 use rohy_core::trusted::{FileStore, Registry};
@@ -49,6 +50,9 @@ struct App {
     tray_error: Option<String>,
     windows: HashMap<window::Id, View>,
     qr: Option<image::Handle>,
+    copied: bool,
+    /// Windows to open once the server listens (`--appairage`, `--telephones`: manual checks).
+    pending: Vec<View>,
 }
 
 fn data_file() -> std::path::PathBuf {
@@ -92,6 +96,14 @@ fn boot() -> (App, Task<Message>) {
         tray_error: None,
         windows: HashMap::new(),
         qr: None,
+        copied: false,
+        pending: std::env::args()
+            .filter_map(|arg| match arg.as_str() {
+                "--appairage" => Some(View::Pairing),
+                "--telephones" => Some(View::Devices),
+                _ => None,
+            })
+            .collect(),
     };
     (app, Task::none())
 }
@@ -116,7 +128,10 @@ impl App {
                 Task::none()
             }
             Message::CopyCode => match &self.model.pairing_uri {
-                Some(uri) => iced::clipboard::write(uri.clone()),
+                Some(uri) => {
+                    self.copied = true;
+                    iced::clipboard::write(uri.clone())
+                }
                 None => Task::none(),
             },
         }
@@ -143,11 +158,15 @@ impl App {
         }
         while let Ok(event) = self.service.events.try_recv() {
             match event {
-                ServiceEvent::Listening(port) => self.model.status = ServerStatus::Listening(port),
+                ServiceEvent::Listening(port) => {
+                    self.model.status = ServerStatus::Listening(port);
+                    let pending = std::mem::take(&mut self.pending);
+                    tasks.extend(pending.into_iter().map(|view| self.open(view)));
+                }
                 ServiceEvent::Failed(error) => self.model.status = ServerStatus::Failed(error),
                 ServiceEvent::Server(event) => {
                     let trusted = self.registry.store.lock().expect("store lock").all();
-                    match self.model.apply(event, trusted) {
+                    match self.model.apply(event, trusted, state::now()) {
                         Effect::WriteClipboard(text) => {
                             self.clipboard_logic
                                 .lock()
@@ -194,12 +213,15 @@ impl App {
                 port,
             };
             let uri = payload.uri();
-            self.qr = images::qr_rgba(&uri, 6)
+            self.copied = false;
+            self.qr = images::qr_rgba(&uri, 8)
                 .map(|(w, h, pixels)| image::Handle::from_rgba(w, h, pixels));
             self.model.pairing_uri = Some(uri);
         }
+        let (width, height) = ui::WINDOW;
         let (id, task) = window::open(window::Settings {
-            size: iced::Size::new(420.0, if view == View::Pairing { 560.0 } else { 420.0 }),
+            size: iced::Size::new(width, height),
+            min_size: Some(iced::Size::new(400.0, 600.0)),
             ..window::Settings::default()
         });
         self.windows.insert(id, view);
@@ -214,65 +236,25 @@ impl App {
     }
 
     fn view(&self, id: window::Id) -> Element<'_, Message> {
-        let content = match self.windows.get(&id) {
-            Some(View::Pairing) => self.pairing_view(),
-            _ => self.devices_view(),
-        };
-        container(content)
-            .padding(24)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
-    }
-
-    fn pairing_view(&self) -> Element<'_, Message> {
-        let mut page =
-            column![text("Scanne ce code avec l'app Rohy sur ton téléphone").size(18)].spacing(16);
-        if let Some(qr) = &self.qr {
-            page = page.push(image(qr.clone()).width(300).height(300));
-            page = page.push(text("Sans caméra : copie le code et colle-le dans l'app.").size(14));
-            page = page.push(button("Copier le code d'association").on_press(Message::CopyCode));
-            page = page.push(
-                text("Le code n'est valable qu'une fois, tant que cette fenêtre est ouverte.")
-                    .size(12),
-            );
-        } else {
-            page = page.push(text("Le serveur démarre…"));
+        match self.windows.get(&id) {
+            Some(View::Pairing) => ui::pairing(self.qr.clone(), self.copied, Message::CopyCode),
+            _ => {
+                let mut footer = format!("Visible sur le réseau local comme « {} »", self.name);
+                if let Some(port) = self.model.port() {
+                    footer.push_str(&format!(" · port {port}"));
+                }
+                ui::devices(
+                    self.model.header(state::now()),
+                    self.model.device_rows(),
+                    footer,
+                    self.tray_error
+                        .as_ref()
+                        .map(|error| format!("Icône de barre des tâches indisponible : {error}")),
+                    Message::Open(View::Pairing),
+                    Message::Forget,
+                )
+            }
         }
-        page.into()
-    }
-
-    fn devices_view(&self) -> Element<'_, Message> {
-        let mut list = column![].spacing(8);
-        if self.model.trusted.is_empty() {
-            list = list.push(text("Aucun téléphone pour l'instant."));
-        }
-        for device in &self.model.trusted {
-            let state = if self.model.is_connected(device) {
-                "Connecté"
-            } else {
-                "Hors ligne"
-            };
-            list = list.push(
-                row![
-                    column![text(device.name.clone()).size(16), text(state).size(12)]
-                        .width(Length::Fill),
-                    button("Oublier").on_press(Message::Forget(device.id())),
-                ]
-                .spacing(12),
-            );
-        }
-        let mut page = column![text(self.model.status_line()).size(18)].spacing(16);
-        if let Some(event) = &self.model.last_event {
-            page = page.push(text(event.clone()).size(14));
-        }
-        if let Some(error) = &self.tray_error {
-            page = page
-                .push(text(format!("Icône de barre des tâches indisponible : {error}")).size(12));
-        }
-        page.push(scrollable(list))
-            .push(button("Associer un téléphone").on_press(Message::Open(View::Pairing)))
-            .into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -284,7 +266,14 @@ impl App {
 }
 
 fn main() -> iced::Result {
-    iced::daemon(boot, App::update, App::view)
+    ui::FONTS
+        .into_iter()
+        .fold(
+            iced::daemon(boot, App::update, App::view),
+            |daemon, bytes| daemon.font(bytes),
+        )
+        .default_font(ui::BODY)
+        .theme(Theme::Light)
         .title(App::title)
         .subscription(App::subscription)
         .run()

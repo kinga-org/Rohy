@@ -2,7 +2,9 @@
 
 /// QR code of `text` as RGBA pixels with a 4-module quiet zone; returns (width, height, pixels).
 pub fn qr_rgba(text: &str, scale: u32) -> Option<(u32, u32, Vec<u8>)> {
-    let code = qrcode::QrCode::new(text.as_bytes()).ok()?;
+    // Level H tolerates the Rohy mark drawn over the center.
+    let code =
+        qrcode::QrCode::with_error_correction_level(text.as_bytes(), qrcode::EcLevel::H).ok()?;
     let modules = code.width() as u32;
     let colors = code.to_colors();
     let quiet = 4;
