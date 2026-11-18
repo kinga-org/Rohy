@@ -1,20 +1,28 @@
 # Rohy
 
-Pont de presse-papiers entre un Mac et un téléphone Android : natif des deux côtés, local,
-chiffré de bout en bout, gratuit et libre. « Rohy » signifie « lien, corde » en malgache.
+Pont de presse-papiers entre un téléphone Android et un ordinateur macOS, Windows ou Linux : apps natives,
+réseau local uniquement, chiffré de bout en bout, gratuit et libre. « Rohy » signifie « lien, corde » en
+malgache.
 
-- **Mac → Android** : tout texte copié sur le Mac arrive dans le presse-papiers du téléphone.
-- **Android → ordinateur** : tuile Réglages rapides « Envoyer », menu Partager, ou action de la notification
-  (Android interdit la lecture du presse-papiers en arrière-plan depuis Android 10).
+- **Ordinateur → Android** : tout texte copié sur l'ordinateur arrive dans le presse-papiers du téléphone.
+- **Android → ordinateur** : tuile Réglages rapides « Envoyer », menu Partager, menu de sélection ou action
+  de la notification (Android interdit la lecture du presse-papiers en arrière-plan depuis Android 10).
+
+| Plateforme | App | Téléchargement |
+|---|---|---|
+| Android 10+ | Kotlin + Compose | APK dans les [releases](https://github.com/kinga-org/Rohy/releases) |
+| macOS 14+ | Swift, barre des menus | `Rohy.app` dans les releases |
+| Windows 10/11 | Rust + iced, zone de notification | `Rohy.exe` dans les releases |
+| Linux | Rust + iced (même app que Windows) | pas encore publiée, à compiler depuis `desktop/` |
 
 ## Structure
 
 | Dossier | Contenu |
 |---|---|
 | `mac/` | Paquet Swift : `RohyCore` (protocole, crypto), `RohyServer` (WebSocket + Bonjour), app barre de menus `Rohy`, `rohy-harness` (tests d'interopérabilité) |
-| `desktop/` | Espace de travail Cargo pour Windows/Linux : `rohy-core` (protocole en Rust), `rohy-server` (WebSocket + Bonjour, `rohy-harness`) |
+| `desktop/` | Espace de travail Cargo pour Windows/Linux : `rohy-core` (protocole en Rust), `rohy-server` (WebSocket + Bonjour, `rohy-harness`), app `apps/rohy-desktop` (iced) |
 | `android/` | `core` (protocole Kotlin, JVM pur) et `app` (service, tuile, partage, interface Compose) |
-| `protocol/` | Vecteurs de test partagés par les deux implémentations |
+| `protocol/` | Vecteurs de test partagés par les trois implémentations (Swift, Kotlin, Rust) |
 | `docs/` | Protocole, phases, backlog, étude concurrentielle, [avancement](docs/avancement/README.md) |
 
 ## Deux apps bureau, une seule expérience
