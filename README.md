@@ -26,8 +26,7 @@ chiffré de bout en bout, gratuit et libre. « Rohy » signifie « lien, corde �
 ```bash
 scripts/setup.sh          # installe les hooks Git du dépôt
 scripts/check-mac.sh      # tests Swift + seuil de couverture
-scripts/check-android.sh  # tests Kotlin + Kover + build debug
-scripts/check-interop.sh  # client Kotlin contre le vrai serveur Swift
+scripts/check-android.sh  # tests Kotlin (dont client Kotlin ↔ vrai serveur Swift) + Kover + build debug
 mac/scripts/bundle.sh     # construit mac/dist/Rohy.app
 ```
 

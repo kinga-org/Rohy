@@ -1,6 +1,6 @@
 # Phase 02 — Appairage et chiffrement
 
-**Statut :** en cours
+**Statut :** en cours — code et tests automatisés terminés ; reste la validation sur le Samsung.
 
 ## Objectif
 Associer un téléphone à un Mac par QR code et établir des sessions chiffrées de bout en bout.

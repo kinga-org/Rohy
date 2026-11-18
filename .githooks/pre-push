@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Full validation suite: tests, coverage thresholds, interop test and debug build.
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+"$ROOT/scripts/check-mac.sh"
+"$ROOT/scripts/check-android.sh"

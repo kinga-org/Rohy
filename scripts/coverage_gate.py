@@ -10,6 +10,9 @@ failed = False
 for metric in ("lines", "functions", "regions", "branches"):
     count = sum(f["summary"][metric]["count"] for f in files)
     covered = sum(f["summary"][metric]["covered"] for f in files)
+    if count == 0:
+        print(f"{metric:>9}: n/a (not instrumented; regions cover branch-level code paths)")
+        continue
     percent = 100.0 if count == 0 else 100.0 * covered / count
     status = "ok" if percent >= threshold else "FAIL"
     failed |= percent < threshold

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Fast checks on the side touched by the staged changes.
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+STAGED="$(git diff --cached --name-only --diff-filter=ACMR)"
+[ -z "$STAGED" ] && exit 0
+
+if echo "$STAGED" | grep -qE '\.(env|jks|keystore)$|local\.properties$'; then
+  echo "pre-commit: refusing to commit secrets or local configuration files." >&2
+  exit 1
+fi
+if echo "$STAGED" | grep -qE '^(mac/|protocol/)'; then
+  (cd "$ROOT/mac" && swift build --quiet && swift test --quiet)
+fi
+if echo "$STAGED" | grep -qE '^(android/|protocol/)'; then
+  source "$ROOT/scripts/env.sh"
+  (cd "$ROOT/android" && ./gradlew --quiet --console=plain :core:test :app:testDebugUnitTest)
+fi
