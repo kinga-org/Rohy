@@ -1,6 +1,6 @@
 # Phase 01 — Fondation
 
-**Statut :** en cours — tout passe en local ; reste à exécuter la CI une fois le dépôt publié sur GitHub.
+**Statut :** terminée (CI au vert dans `kinga-org/Rohy` le 2026-11-18).
 
 ## Objectif
 Poser le monorepo (Mac + Android + protocole), la qualité automatisée et la spécification du protocole.

@@ -1,6 +1,6 @@
 # Phase 02 — Appairage et chiffrement
 
-**Statut :** en cours — code et tests automatisés terminés ; reste la validation sur le Samsung.
+**Statut :** terminée (validée sur Galaxy S24 Ultra le 2026-11-18).
 
 ## Objectif
 Associer un téléphone à un Mac par QR code et établir des sessions chiffrées de bout en bout.
@@ -19,7 +19,7 @@ Phase 01.
 - [x] Serveur WebSocket + Bonjour (Network.framework)
 - [x] Client WebSocket (OkHttp) + découverte NSD avec repli sur les adresses du QR code
 - [x] Écran d'appairage Mac (QR code + code texte) et écran d'association Android
-- [ ] Test sur le Samsung de l'auteur
+- [x] Test sur le Samsung de l'auteur
 
 ## Critères d'acceptation
 - Un appareil inconnu sans jeton est refusé (`4403`).

@@ -14,7 +14,7 @@ chiffré de bout en bout, gratuit et libre. « Rohy » signifie « lien, corde �
 | `mac/` | Paquet Swift : `RohyCore` (protocole, crypto), `RohyServer` (WebSocket + Bonjour), app barre de menus `Rohy`, `rohy-harness` (tests d'interopérabilité) |
 | `android/` | `core` (protocole Kotlin, JVM pur) et `app` (service, tuile, partage, interface Compose) |
 | `protocol/` | Vecteurs de test partagés par les deux implémentations |
-| `docs/` | Protocole, phases, backlog, étude concurrentielle |
+| `docs/` | Protocole, phases, backlog, étude concurrentielle, [avancement](docs/avancement/README.md) |
 
 ## Prérequis
 
