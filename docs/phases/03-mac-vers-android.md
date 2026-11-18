@@ -1,6 +1,6 @@
 # Phase 03 — Texte Mac → Android
 
-**Statut :** en cours
+**Statut :** en cours — code et tests automatisés terminés ; reste la validation sur le Samsung.
 
 ## Objectif
 Tout texte copié sur le Mac arrive automatiquement dans le presse-papiers du téléphone.

@@ -1,6 +1,6 @@
 # Phase 01 — Fondation
 
-**Statut :** en cours
+**Statut :** en cours — tout passe en local ; reste à exécuter la CI une fois le dépôt publié sur GitHub.
 
 ## Objectif
 Poser le monorepo (Mac + Android + protocole), la qualité automatisée et la spécification du protocole.
@@ -24,6 +24,12 @@ Aucune.
 - `scripts/check-mac.sh` et `scripts/check-android.sh` passent en local.
 - Les deux implémentations valident les mêmes vecteurs de test.
 - Couverture ≥ 80 % (instructions, branches, fonctions, lignes) sur les modules cœur.
+
+## Notes
+- Swift (llvm-cov) ne mesure pas les branches : le seuil s'applique aux lignes, fonctions et régions.
+- Kover ne mesure pas les fonctions : le seuil s'applique aux lignes, branches et instructions.
+- Le seuil s'applique aux modules cœur (`RohyCore`, `android/core`). Le code d'interface et de plateforme
+  (SwiftUI, service Android, NSD) est vérifié par le test d'interopérabilité et les tests manuels.
 
 ## Stratégie de test
 Tests unitaires Swift (XCTest) et Kotlin (JUnit), vecteurs croisés, seuils de couverture appliqués dans les scripts et la CI.

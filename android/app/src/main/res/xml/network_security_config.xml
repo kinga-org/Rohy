@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Rohy talks to the Mac over ws:// on the local network. Confidentiality and integrity come from the
+  app-level end-to-end encryption (docs/protocol.md), not from TLS, so plain transport is allowed.
+  Local IP addresses cannot be listed as domains, hence the base config.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

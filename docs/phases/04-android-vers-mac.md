@@ -1,6 +1,6 @@
 # Phase 04 — Texte Android → Mac
 
-**Statut :** en cours
+**Statut :** en cours — code et tests automatisés terminés ; reste la validation sur le Samsung.
 
 ## Objectif
 Envoyer un texte du téléphone vers le Mac en un geste, malgré l'interdiction de lecture en arrière-plan (Android 10+).
