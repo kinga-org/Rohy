@@ -13,6 +13,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var pairingURI: String?
     @Published private(set) var lastEvent: String?
     @Published private(set) var startupError: String?
+    /// Incremented on each successful pairing, so the pairing window can close itself.
+    @Published private(set) var pairingsCompleted = 0
 
     private let store: FileTrustedDeviceStore
     private let pairing = PairingWindow()
@@ -89,6 +91,7 @@ extension AppModel: SyncServerDelegate {
         MainActor.assumeIsolated {
             trusted = store.all()
             closePairing()
+            pairingsCompleted += 1
             lastEvent = "\(device.name) associé"
         }
     }

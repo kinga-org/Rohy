@@ -44,6 +44,7 @@ class ModelTest {
         assertEquals("Connecté à Mac", SyncStatus.Connected("Mac").label)
         assertEquals("Mac injoignable, nouvel essai dans 4 s", SyncStatus.Waiting("Mac", 4).label)
         assertTrue(SyncStatus.Rejected("Mac").label.startsWith("Mac a refusé"))
+        assertEquals("Autorise l'accès au réseau local pour joindre Mac.", SyncStatus.LocalNetworkDenied("Mac").label)
         assertTrue(SyncStatus.Connected("Mac").isConnected)
         assertFalse(SyncStatus.Searching("Mac").isConnected)
     }

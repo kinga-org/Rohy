@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -75,7 +76,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         storage = Storage(this)
         pairedMac = storage.pairedMac
-        requestNotificationPermission()
+        requestStartupPermissions()
         if (pairedMac != null) SyncService.start(this)
         setContent {
             val context = LocalContext.current
@@ -117,7 +118,9 @@ class MainActivity : ComponentActivity() {
 
     private fun pair(code: String?) {
         val payload = code?.trim()?.let(PairingPayload::parse) ?: return toast("Code d'association invalide")
-        pairedMac = PairedMac.from(payload)
+        // Saved here, synchronously: onResume (after the scanner closes) must already see it.
+        storage.pairedMac = PairedMac.from(payload)
+        pairedMac = storage.pairedMac
         SyncService.pair(this, payload.uri)
     }
 
@@ -138,16 +141,34 @@ class MainActivity : ComponentActivity() {
         ) {}
     }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+    private fun requestStartupPermissions() {
+        val missing = buildList {
+            if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
+            if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_MIN_SDK) add(LOCAL_NETWORK_PERMISSION)
+        }.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), REQUEST_STARTUP)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        checks = reliabilityChecks(readFacts())
+        val index = permissions.indexOf(LOCAL_NETWORK_PERMISSION)
+        if (index < 0) return
+        if (grantResults.getOrNull(index) == PackageManager.PERMISSION_GRANTED) {
+            if (storage.pairedMac != null) SyncService.start(this, "accès au réseau local autorisé")
+        } else if (requestCode == REQUEST_LOCAL_NETWORK && !shouldShowRequestPermissionRationale(LOCAL_NETWORK_PERMISSION)) {
+            // Denied for good: only the app settings can grant it now.
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
     }
 
     private fun readFacts() = DeviceFacts(
         manufacturer = Build.MANUFACTURER,
+        localNetworkGranted = if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_MIN_SDK) {
+            checkSelfPermission(LOCAL_NETWORK_PERMISSION) == PackageManager.PERMISSION_GRANTED
+        } else {
+            null
+        },
         notificationsEnabled = getSystemService(NotificationManager::class.java).areNotificationsEnabled(),
         ignoringBatteryOptimizations = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName),
         backgroundRestricted = getSystemService(ActivityManager::class.java).isBackgroundRestricted,
@@ -157,6 +178,7 @@ class MainActivity : ComponentActivity() {
         val packageUri = Uri.parse("package:$packageName")
         val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri)
         val intent = when (id) {
+            CheckId.LOCAL_NETWORK -> return requestPermissions(arrayOf(LOCAL_NETWORK_PERMISSION), REQUEST_LOCAL_NETWORK)
             CheckId.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
             CheckId.BATTERY_OPTIMIZATION -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri)
@@ -202,7 +224,7 @@ private fun HomeScreen(
             } else {
                 val icon = when (status) {
                     is SyncStatus.Connected -> Icons.Filled.CheckCircle
-                    is SyncStatus.Rejected -> Icons.Filled.Warning
+                    is SyncStatus.Rejected, is SyncStatus.LocalNetworkDenied -> Icons.Filled.Warning
                     else -> Icons.Filled.Refresh
                 }
                 Section(mac.name, icon) {
@@ -215,7 +237,22 @@ private fun HomeScreen(
                     if (!status.isConnected) {
                         OutlinedButton(onClick = onReconnect, modifier = Modifier.fillMaxWidth()) { Text("Reconnecter") }
                     }
-                    OutlinedButton(onClick = onForget, modifier = Modifier.fillMaxWidth()) {
+                    var confirmForget by remember { mutableStateOf(false) }
+                    if (confirmForget) {
+                        AlertDialog(
+                            onDismissRequest = { confirmForget = false },
+                            title = { Text("Oublier ${mac.name} ?") },
+                            text = { Text("Il faudra scanner à nouveau le QR code du Mac pour le réassocier.") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    confirmForget = false
+                                    onForget()
+                                }) { Text("Oublier") }
+                            },
+                            dismissButton = { TextButton(onClick = { confirmForget = false }) { Text("Annuler") } },
+                        )
+                    }
+                    OutlinedButton(onClick = { confirmForget = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Oublier ce Mac")
@@ -242,6 +279,9 @@ private fun HomeScreen(
         }
     }
 }
+
+private const val REQUEST_STARTUP = 1
+private const val REQUEST_LOCAL_NETWORK = 2
 
 private val SAMSUNG_BATTERY_SCREENS = listOf(
     ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),

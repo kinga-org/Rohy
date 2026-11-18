@@ -39,6 +39,8 @@ class ConnectionJournal(private val capacity: Int = DEFAULT_CAPACITY, initial: L
 /** What Android lets the app read about the settings that keep the connection alive. */
 data class DeviceFacts(
     val manufacturer: String,
+    /** null when the Android version has no local network permission (before Android 17). */
+    val localNetworkGranted: Boolean?,
     val notificationsEnabled: Boolean,
     val ignoringBatteryOptimizations: Boolean,
     val backgroundRestricted: Boolean,
@@ -48,7 +50,7 @@ data class DeviceFacts(
 
 enum class CheckState { OK, TO_FIX, TO_CHECK }
 
-enum class CheckId { NOTIFICATIONS, BATTERY_OPTIMIZATION, BACKGROUND_RESTRICTION, SAMSUNG_NEVER_SLEEPING, RECENTS_LOCK }
+enum class CheckId { LOCAL_NETWORK, NOTIFICATIONS, BATTERY_OPTIMIZATION, BACKGROUND_RESTRICTION, SAMSUNG_NEVER_SLEEPING, RECENTS_LOCK }
 
 data class ReliabilityCheck(val id: CheckId, val title: String, val explanation: String, val state: CheckState)
 
@@ -57,6 +59,15 @@ data class ReliabilityCheck(val id: CheckId, val title: String, val explanation:
  * Samsung-only settings cannot be read by apps, so they stay "à vérifier".
  */
 fun reliabilityChecks(facts: DeviceFacts): List<ReliabilityCheck> = buildList {
+    facts.localNetworkGranted?.let { granted ->
+        add(
+            ReliabilityCheck(
+                CheckId.LOCAL_NETWORK, "Accès au réseau local",
+                "Sans cette autorisation, Android empêche Rohy de joindre le Mac sur le Wi-Fi.",
+                if (granted) CheckState.OK else CheckState.TO_FIX,
+            ),
+        )
+    }
     add(
         ReliabilityCheck(
             CheckId.NOTIFICATIONS, "Notifications",
@@ -95,6 +106,20 @@ fun reliabilityChecks(facts: DeviceFacts): List<ReliabilityCheck> = buildList {
         )
     }
 }
+
+/**
+ * Statuses that alternate while the Mac is unreachable (searching, waiting) share one group, so the
+ * journal records the outage once instead of every retry.
+ */
+val SyncStatus.journalGroup: String
+    get() = when (this) {
+        is SyncStatus.Searching, is SyncStatus.Waiting -> "unreachable"
+        else -> this::class.simpleName.orEmpty()
+    }
+
+/** Android 17 (API 37) gates local network access behind a runtime permission. */
+const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
+const val LOCAL_NETWORK_MIN_SDK = 37
 
 /** A Wi-Fi comeback should not wait for the backoff delay (a search already in progress continues). */
 val SyncStatus.reconnectsOnNetworkReturn: Boolean

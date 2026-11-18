@@ -16,8 +16,9 @@ réglages de batterie que l'app ne peut pas changer elle-même.
   d'attente progressif.
 - **Redémarrage automatique** du service après le démarrage du téléphone et après une mise à jour de l'app.
 - **Journal de connexion** visible dans l'app (derniers événements horodatés) pour le test d'endurance.
-- Permission `ACCESS_LOCAL_NETWORK` déclarée dès maintenant ; la demande à l'exécution viendra avec le
-  passage à `targetSdk 37` (Android 17 ne l'impose qu'aux apps qui le ciblent).
+- Permission `ACCESS_LOCAL_NETWORK` (Android 17) demandée à l'exécution et affichée dans les vérifications.
+  Constaté sur le Samsung : dès que l'app **déclare** cette permission, Android 17 bloque son trafic local
+  tant qu'elle n'est pas accordée, même avec `targetSdk 36`.
 
 Hors périmètre : association `CompanionDeviceManager` (phase 05), plusieurs ordinateurs par téléphone.
 
@@ -25,14 +26,21 @@ Hors périmètre : association `CompanionDeviceManager` (phase 05), plusieurs or
 Phases 03 et 04.
 
 ## Tâches
-- [ ] Journal de connexion (tampon circulaire persistant) et ses tests
-- [ ] Modèle de la liste de vérifications (états, actions) et ses tests
-- [ ] Surveillance du réseau (`ConnectivityManager.NetworkCallback`) : reconnexion immédiate au retour du Wi-Fi
-- [ ] Récepteur `BOOT_COMPLETED` / `MY_PACKAGE_REPLACED` qui relance le service si un Mac est associé
-- [ ] Demande d'exemption d'optimisation de batterie (un appui) et détection du mode « Restreint »
-- [ ] Raccourcis Samsung (Entretien de l'appareil → Batterie) avec repli sur les réglages de l'app
-- [ ] Écran : section « Garder la connexion » avec l'état de chaque vérification et le journal
+- [x] Demande de `ACCESS_LOCAL_NETWORK` au lancement et depuis les vérifications ; état « Autorise l'accès au réseau local »
+- [x] Journal de connexion (tampon circulaire persistant) et ses tests
+- [x] Modèle de la liste de vérifications (états, actions) et ses tests
+- [x] Surveillance du réseau (`ConnectivityManager.NetworkCallback`) : reconnexion immédiate au retour du Wi-Fi
+- [x] Récepteur `BOOT_COMPLETED` / `MY_PACKAGE_REPLACED` qui relance le service si un Mac est associé
+- [x] Demande d'exemption d'optimisation de batterie (un appui) et détection du mode « Restreint »
+- [x] Raccourcis Samsung (Entretien de l'appareil → Batterie) avec repli sur les réglages de l'app
+- [x] Écran : section « Garder la connexion » avec l'état de chaque vérification et le journal
 - [ ] Test d'endurance : 24 h écran éteint, puis changement de Wi-Fi et veille du Mac
+
+## Résultats sur le Samsung (Galaxy S24 Ultra, Android 17) — 2026-11-18
+- Wi-Fi coupé puis rétabli : reconnexion **1,2 s** après le retour du réseau (le Wi-Fi lui-même a mis 13 s à revenir).
+- Redémarrage de l'app Mac : reconnexion seule dans le délai d'attente progressif (≤ 30 s).
+- Mise à jour de Rohy : service relancé seul (« Service démarré (mise à jour de Rohy) »).
+- Restent à faire : redémarrage du téléphone, test d'endurance de 24 h.
 
 ## Critères d'acceptation
 - Service toujours connecté après 24 h écran éteint sur le Samsung de test (journal à l'appui).

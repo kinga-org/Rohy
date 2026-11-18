@@ -32,7 +32,7 @@ class ConnectionJournalTest {
 }
 
 class ReliabilityChecksTest {
-    private val healthy = DeviceFacts("samsung", notificationsEnabled = true, ignoringBatteryOptimizations = true, backgroundRestricted = false)
+    private val healthy = DeviceFacts("samsung", localNetworkGranted = null, notificationsEnabled = true, ignoringBatteryOptimizations = true, backgroundRestricted = false)
 
     @Test
     fun samsungGetsManualChecksAndReadableStates() {
@@ -42,14 +42,28 @@ class ReliabilityChecksTest {
             checks.map { it.id },
         )
         assertEquals(listOf(CheckState.OK, CheckState.OK, CheckState.OK, CheckState.TO_CHECK, CheckState.TO_CHECK), checks.map { it.state })
-        assertTrue(DeviceFacts("SAMSUNG", true, true, false).isSamsung)
+        assertTrue(DeviceFacts("SAMSUNG", null, true, true, false).isSamsung)
     }
 
     @Test
     fun problemsAreFlaggedToFix() {
-        val checks = reliabilityChecks(DeviceFacts("Google", false, false, true))
-        assertEquals(3, checks.size)
+        val checks = reliabilityChecks(DeviceFacts("Google", false, false, false, true))
+        assertEquals(CheckId.LOCAL_NETWORK, checks.first().id)
+        assertEquals(4, checks.size)
         assertTrue(checks.all { it.state == CheckState.TO_FIX })
+    }
+
+    @Test
+    fun retriesShareOneJournalGroup() {
+        assertEquals(SyncStatus.Searching("Mac").journalGroup, SyncStatus.Waiting("Mac", 4).journalGroup)
+        assertTrue(SyncStatus.Connected("Mac").journalGroup != SyncStatus.Waiting("Mac", 4).journalGroup)
+        assertEquals("Stopped", SyncStatus.Stopped.journalGroup)
+    }
+
+    @Test
+    fun grantedLocalNetworkIsOk() {
+        val check = reliabilityChecks(healthy.copy(localNetworkGranted = true)).first()
+        assertEquals(CheckId.LOCAL_NETWORK to CheckState.OK, check.id to check.state)
     }
 
     @Test

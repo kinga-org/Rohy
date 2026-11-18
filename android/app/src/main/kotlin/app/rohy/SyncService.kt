@@ -10,6 +10,7 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.Network
@@ -121,6 +122,7 @@ class SyncService : Service() {
                 main.post { stopSelf() }
             }
             ACTION_FORGET -> {
+                log("Mac oublié depuis l'app")
                 disconnect()
                 storage.pairedMac = null
                 publish(SyncStatus.NotPaired)
@@ -138,6 +140,11 @@ class SyncService : Service() {
 
     private fun connect() {
         val mac = storage.pairedMac ?: return publish(SyncStatus.NotPaired)
+        if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_MIN_SDK &&
+            checkSelfPermission(LOCAL_NETWORK_PERMISSION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return publish(SyncStatus.LocalNetworkDenied(mac.name))
+        }
         publish(SyncStatus.Searching(mac.name))
         val discovered = MacLocator(this).find(mac.fingerprint)
         Log.i(TAG, "discovered=$discovered stored=${mac.hosts}")
@@ -217,7 +224,7 @@ class SyncService : Service() {
     /** Journals status changes only (not every retry countdown) to keep hours of history. */
     private fun publish(newStatus: SyncStatus, detail: String? = null) {
         val previous = status.value
-        if (previous::class != newStatus::class) log(newStatus.label + (detail?.let { " ($it)" } ?: ""))
+        if (previous.journalGroup != newStatus.journalGroup) log(newStatus.label + (detail?.let { " ($it)" } ?: ""))
         mutableStatus.value = newStatus
         main.post {
             getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(newStatus))

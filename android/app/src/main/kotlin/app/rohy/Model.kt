@@ -36,6 +36,7 @@ sealed interface SyncStatus {
     data class Connected(val macName: String) : SyncStatus
     data class Waiting(val macName: String, val retryInSeconds: Long) : SyncStatus
     data class Rejected(val macName: String) : SyncStatus
+    data class LocalNetworkDenied(val macName: String) : SyncStatus
 
     val label: String
         get() = when (this) {
@@ -45,6 +46,7 @@ sealed interface SyncStatus {
             is Connected -> "Connecté à $macName"
             is Waiting -> "$macName injoignable, nouvel essai dans $retryInSeconds s"
             is Rejected -> "$macName a refusé la connexion. Associe-le à nouveau."
+            is LocalNetworkDenied -> "Autorise l'accès au réseau local pour joindre $macName."
         }
 
     val isConnected: Boolean get() = this is Connected
