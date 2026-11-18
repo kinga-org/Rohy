@@ -11,7 +11,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var connected: [TrustedDevice] = []
     @Published private(set) var trusted: [TrustedDevice] = []
     @Published private(set) var pairingURI: String?
-    @Published private(set) var lastEvent: String?
+    @Published private(set) var lastActivity: DesktopPresentation.Activity?
+    @Published var appearance: Appearance = Appearance(rawValue: UserDefaults.standard.string(forKey: "appearance") ?? "") ?? .system {
+        didSet {
+            UserDefaults.standard.set(appearance.rawValue, forKey: "appearance")
+            NSApp.appearance = appearance.nsAppearance
+        }
+    }
     @Published private(set) var startupError: String?
     /// Incremented on each successful pairing, so the pairing window can close itself.
     @Published private(set) var pairingsCompleted = 0
@@ -21,13 +27,20 @@ final class AppModel: ObservableObject {
     private let watcher = PasteboardWatcher()
     private var identity: Curve25519.KeyAgreement.PrivateKey?
     private var server: SyncServer?
-    private let macName = Host.current().localizedName ?? "Mac"
+    let macName = Host.current().localizedName ?? "Mac"
 
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         store = FileTrustedDeviceStore(url: support.appendingPathComponent("Rohy/devices.json"))
         trusted = store.all()
         start()
+        let saved = appearance
+        DispatchQueue.main.async { NSApp.appearance = saved.nsAppearance }
+    }
+
+    var port: UInt16? {
+        if case .listening(let port) = serverState { return port }
+        return nil
     }
 
     private func start() {
@@ -92,14 +105,14 @@ extension AppModel: SyncServerDelegate {
             trusted = store.all()
             closePairing()
             pairingsCompleted += 1
-            lastEvent = "\(device.name) associé"
+            lastActivity = .paired(device.name)
         }
     }
 
     nonisolated func syncServer(_ server: SyncServer, didReceive clip: Clip, from device: TrustedDevice) {
         MainActor.assumeIsolated {
             watcher.write(clip)
-            lastEvent = "Reçu de \(device.name)"
+            lastActivity = .received(from: device.name)
             notify("Reçu de \(device.name)", clip.sensitive ? "Contenu masqué" : String(clip.text.prefix(80)))
         }
     }
