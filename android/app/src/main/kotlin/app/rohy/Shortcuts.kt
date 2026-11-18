@@ -53,6 +53,15 @@ class ShareReceiverActivity : Activity() {
     }
 }
 
+/** "Envoyer au Mac" entry in the text selection menu (next to Copier, Partager). */
+class ProcessTextActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        sendToMac(intent?.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString())
+        finish()
+    }
+}
+
 /** Quick Settings tile "Envoyer au Mac". */
 class ClipTileService : TileService() {
     override fun onStartListening() {

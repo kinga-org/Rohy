@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PersistableBundle
+import android.util.Log
 import app.rohy.core.Backoff
 import app.rohy.core.ClientSession
 import app.rohy.core.Clip
@@ -109,6 +110,7 @@ class SyncService : Service() {
         val mac = storage.pairedMac ?: return publish(SyncStatus.NotPaired)
         publish(SyncStatus.Searching(mac.name))
         val discovered = MacLocator(this).find(mac.fingerprint)
+        Log.i(TAG, "discovered=$discovered stored=${mac.hosts}")
         attempt(mac, connectionCandidates(discovered, mac), 0, ++generation)
     }
 
@@ -133,6 +135,7 @@ class SyncService : Service() {
             }
 
             override fun onClosed(code: Int?, reason: String) = executor.execute {
+                Log.w(TAG, "connection to ${candidates[index]}:${mac.port} closed: code=$code reason=$reason")
                 if (gen != generation) return@execute
                 val wasReady = status.value.isConnected
                 outbox.addAll(client?.drainPending().orEmpty())
@@ -145,7 +148,13 @@ class SyncService : Service() {
             }
         })
         client = newClient
-        newClient.connect(candidates[index], mac.port)
+        try {
+            newClient.connect(candidates[index], mac.port)
+        } catch (error: IllegalArgumentException) {
+            Log.w(TAG, "invalid address ${candidates[index]}", error)
+            client = null
+            attempt(mac, candidates, index + 1, gen)
+        }
     }
 
     private fun scheduleRetry(mac: PairedMac) {
@@ -208,6 +217,7 @@ class SyncService : Service() {
     }
 
     companion object {
+        private const val TAG = "Rohy"
         private const val CHANNEL_ID = "sync"
         private const val NOTIFICATION_ID = 1
         private const val ACTION_START = "app.rohy.START"

@@ -185,7 +185,7 @@ private fun HomeScreen(
                     }
                 }
                 Section("Envoyer depuis le téléphone", Icons.Filled.Share) {
-                    Text("Copie un texte, puis touche la tuile « Envoyer au Mac » des réglages rapides, ou l'action de la notification. Tu peux aussi sélectionner un texte et choisir Partager → Mac (Rohy).")
+                    Text("Sélectionne un texte puis choisis « Envoyer au Mac » dans le menu (souvent sous ⋮). Ou copie un texte, puis touche la tuile « Envoyer au Mac » des réglages rapides, ou l'action de la notification. Tu peux aussi sélectionner un texte et choisir Partager → Mac (Rohy).")
                     OutlinedButton(onClick = onAddTile, modifier = Modifier.fillMaxWidth()) { Text("Ajouter la tuile") }
                 }
                 Section("Garder la connexion", Icons.Filled.Settings) {
