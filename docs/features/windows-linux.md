@@ -1,7 +1,8 @@
 # Rohy pour Windows et Linux
 
-**Statut :** backlog. Décision technique prise le 2026-11-18 ; à promouvoir en phase numérotée après la
-stabilisation (phases 05 et 06) et le passage du téléphone à plusieurs ordinateurs.
+**Statut :** promue le 2026-11-18 en phases [07](../phases/07-coeur-rust.md) (cœur Rust),
+[08](../phases/08-app-bureau-iced.md) (app iced) et [09](../phases/09-plusieurs-ordinateurs.md)
+(plusieurs ordinateurs par téléphone), à la demande du propriétaire, avant la phase 05.
 
 ## Objectif
 

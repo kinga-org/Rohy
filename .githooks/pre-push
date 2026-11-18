@@ -4,3 +4,4 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/check-mac.sh"
 "$ROOT/scripts/check-android.sh"
+"$ROOT/scripts/check-desktop.sh"
