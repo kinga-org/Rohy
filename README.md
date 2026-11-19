@@ -36,8 +36,8 @@ de vérifier l'autre**, dans la même PR ou dans une PR liée :
 - les textes et règles d'affichage partagés (temps relatifs, dates, ligne d'état) sont testés des deux
   côtés avec les mêmes valeurs attendues (`DesktopPresentation` en Swift, `state.rs` en Rust) ;
 - l'apparence, elle, suit chaque système :
-  - Mac : look natif (police système, matières et couleur d'accent du système, panneau façon menu de la
-    barre des menus, fenêtre standard ; mode clair ou sombre du système). Maquette : canvas
+  - Mac : composants natifs (vrai menu `NSMenu` dans la barre des menus, fenêtre standard, police,
+    couleur d'accent et mode clair ou sombre du système). Maquette : canvas
     « Rohy macOS — natif » (https://claude.ai/artifact/7VWrpCw2XEDyaH4Ze1tSRr) ;
   - Windows et Linux : thème Rohy (vert foncé, Inter, cartes), choix « Apparence » dans le menu de
     l'icône. Maquette : canvas « Rohy bureau — refonte »
