@@ -29,7 +29,7 @@ struct RohyApp: App {
     }
 }
 
-/// Menu bar panel: the "Téléphones associés" screen of the design board, plus Apparence and Quitter.
+/// Menu bar panel, drawn like the system's own menus (canvas "Rohy macOS — natif").
 struct MenuPanel: View {
     @ObservedObject var model: AppModel
     @Environment(\.openWindow) private var openWindow
@@ -42,17 +42,17 @@ struct MenuPanel: View {
                     let connected = model.connected.contains { $0.id == device.id }
                     return PhoneRow(
                         id: device.id, name: device.name, connected: connected,
-                        detail: DesktopPresentation.deviceDetail(connected: connected, pairedAt: device.pairedAt)
+                        detail: DesktopPresentation.deviceDetail(connected: connected, pairedAt: device.pairedAt),
+                        pairedOn: DesktopPresentation.shortDate(device.pairedAt)
                     )
                 },
                 footer: DesktopPresentation.footer(computerName: model.macName, port: model.port),
                 error: model.startupError,
-                appearance: $model.appearance,
                 onPair: {
                     openWindow(id: "pairing")
                     NSApp.activate(ignoringOtherApps: true)
                 },
-                onForget: { id in model.trusted.first { $0.id == id }.map(model.remove) },
+                onForget: forget,
                 onQuit: { NSApp.terminate(nil) }
             )
         }
@@ -66,6 +66,18 @@ struct MenuPanel: View {
             connected: model.connected.map(\.name), activity: model.lastActivity, now: now
         )
     }
+
+    /// Same confirmation as the Android app before forgetting.
+    private func forget(_ id: String) {
+        guard let device = model.trusted.first(where: { $0.id == id }) else { return }
+        let alert = NSAlert()
+        alert.messageText = "Oublier \(device.name) ?"
+        alert.informativeText = "Il faudra scanner à nouveau le QR code de ce Mac pour le réassocier."
+        alert.addButton(withTitle: "Oublier").hasDestructiveAction = true
+        alert.addButton(withTitle: "Annuler")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn { model.remove(device) }
+    }
 }
 
 struct PhoneRow: Identifiable {
@@ -73,6 +85,7 @@ struct PhoneRow: Identifiable {
     let name: String
     let connected: Bool
     let detail: String
+    let pairedOn: String
 }
 
 struct PanelContent: View {
@@ -80,158 +93,213 @@ struct PanelContent: View {
     let phones: [PhoneRow]
     let footer: String
     let error: String?
-    @Binding var appearance: Appearance
     let onPair: () -> Void
     let onForget: (String) -> Void
     let onQuit: () -> Void
-    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let p = Palette.of(scheme)
-        VStack(alignment: .leading, spacing: 18) {
-            HeaderView(header: header, palette: p)
+        VStack(alignment: .leading, spacing: 0) {
+            StatusHeader(header: header, error: error)
+            MenuSeparator()
+            SectionTitle("Téléphones associés")
             if phones.isEmpty {
-                EmptyPhones(palette: p)
+                Text("Aucun téléphone pour l'instant. Associe ton Android pour copier d'un côté et coller de l'autre.")
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 9).padding(.top, 2).padding(.bottom, 8)
             } else {
-                PhoneList(phones: phones, palette: p, onForget: onForget)
-            }
-            VStack(spacing: 10) {
-                Button(action: onPair) { Label("Associer un téléphone", systemImage: "plus") }
-                    .buttonStyle(PrimaryButtonStyle(palette: p))
-                Text(footer)
-                    .font(Typeface.inter(12)).foregroundStyle(p.muted)
-                    .multilineTextAlignment(.center).frame(maxWidth: .infinity)
-                if let error {
-                    Text(error).font(Typeface.inter(12)).foregroundStyle(p.danger).frame(maxWidth: .infinity)
+                ForEach(phones) { phone in
+                    PhoneItem(phone: phone) { onForget(phone.id) }
                 }
             }
-            Rectangle().fill(p.divider).frame(height: 1)
-            HStack {
-                Menu {
-                    Picker("Apparence", selection: $appearance) {
-                        ForEach(Appearance.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.inline)
-                } label: {
-                    Label("Apparence", systemImage: "circle.lefthalf.filled")
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .font(Typeface.inter(13, .medium))
-                .foregroundStyle(p.ink)
-                Spacer()
-                Button("Quitter Rohy", action: onQuit)
-                    .buttonStyle(QuietButtonStyle(color: p.muted, hoverFill: p.accentSoft))
-            }
+            MenuSeparator()
+            MenuItem("Associer un téléphone…", systemImage: "qrcode", shortcut: "⌘N", action: onPair)
+                .keyboardShortcut("n")
+            // Non-breaking hyphens: "MacBook-Pro" wraps as a whole.
+            Text(footer.replacingOccurrences(of: "-", with: "\u{2011}"))
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, 31).padding(.trailing, 9).padding(.top, 1).padding(.bottom, 5)
+            MenuSeparator()
+            MenuItem("Quitter Rohy", systemImage: "power", shortcut: "⌘Q", action: onQuit)
+                .keyboardShortcut("q")
         }
-        .padding(20)
-        .frame(width: 420)
-        .background(p.ground)
-        .foregroundStyle(p.ink)
+        .padding(5)
+        .frame(width: 300)
     }
 }
 
-private struct HeaderView: View {
+/// "Rohy", then a status dot with the header title, then the last activity or the explanation.
+private struct StatusHeader: View {
     let header: DesktopPresentation.Header
-    let palette: Palette
+    let error: String?
 
     var body: some View {
-        if case .connected(_, let activity) = header {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    Image(systemName: "link")
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
-                        .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.14)))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("SYNCHRONISATION ACTIVE").font(Typeface.inter(12, .medium)).foregroundStyle(Palette.onBrandLabel)
-                        Text(header.title).font(Typeface.inter(19, .bold)).foregroundStyle(.white)
-                    }
-                }
-                if let activity {
-                    Rectangle().fill(.white.opacity(0.16)).frame(height: 1)
-                    Label(activity, systemImage: "arrow.down.to.line")
-                        .font(Typeface.inter(13)).foregroundStyle(Palette.onBrandBody)
-                }
+        VStack(alignment: .leading, spacing: 3) {
+            Text("Rohy").font(.system(size: 13, weight: .bold))
+            HStack(spacing: 7) {
+                statusDot
+                Text(header.title).font(.system(size: 13))
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.brand))
-        } else {
-            HStack(spacing: 12) {
-                if case .failed = header {
-                    Dot(color: palette.danger, size: 10)
-                } else {
-                    Dot(color: palette.offline, size: 10, hollow: true)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(header.title).font(Typeface.inter(16, .semibold))
-                    if let subtitle = header.subtitle {
-                        Text(subtitle).font(Typeface.inter(12)).foregroundStyle(palette.muted)
-                    }
-                }
+            if let detail {
+                Text(detail)
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 15)
             }
-            .padding(.horizontal, 20).padding(.vertical, 18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .card(palette)
+            if let error {
+                Text(error)
+                    .font(.system(size: 11)).foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 15)
+            }
+        }
+        .padding(.horizontal, 9).padding(.top, 7).padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var detail: String? {
+        if case .connected(_, let activity) = header { return activity }
+        return header.subtitle
+    }
+
+    @ViewBuilder private var statusDot: some View {
+        switch header {
+        case .connected: Circle().fill(.green).frame(width: 8, height: 8)
+        case .failed: Circle().fill(.red).frame(width: 8, height: 8)
+        case .starting, .waiting: Circle().strokeBorder(.secondary, lineWidth: 1.5).frame(width: 8, height: 8)
         }
     }
 }
 
-private struct PhoneList: View {
-    let phones: [PhoneRow]
-    let palette: Palette
-    let onForget: (String) -> Void
+private struct SectionTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("TÉLÉPHONES ASSOCIÉS").font(Typeface.inter(13, .semibold)).foregroundStyle(palette.muted)
-            VStack(spacing: 0) {
-                ForEach(Array(phones.enumerated()), id: \.element.id) { index, phone in
-                    if index > 0 { Rectangle().fill(palette.divider).frame(height: 1).padding(.horizontal, 16) }
-                    row(phone)
-                }
-            }
-            .card(palette)
-        }
-    }
-
-    private func row(_ phone: PhoneRow) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "iphone")
-                .font(.system(size: 17)).foregroundStyle(phone.connected ? palette.accentText : palette.muted)
-                .frame(width: 40, height: 40)
-                .background(RoundedRectangle(cornerRadius: 10).fill(phone.connected ? palette.accentSoft : palette.neutralSoft))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(phone.name).font(Typeface.inter(15, .semibold)).lineLimit(1)
-                HStack(spacing: 6) {
-                    Dot(color: phone.connected ? palette.success : palette.offline, size: 7, hollow: !phone.connected)
-                    Text(phone.detail).font(Typeface.inter(12)).foregroundStyle(phone.connected ? palette.successText : palette.muted)
-                        .lineLimit(1)
-                }
-            }
-            Spacer(minLength: 8)
-            Button("Oublier") { onForget(phone.id) }
-                .buttonStyle(QuietButtonStyle(color: palette.danger, hoverFill: palette.dangerSoft))
-        }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        Text(text)
+            .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            .padding(.horizontal, 9).padding(.top, 5).padding(.bottom, 3)
     }
 }
 
-private struct EmptyPhones: View {
-    let palette: Palette
+private struct MenuSeparator: View {
+    var body: some View {
+        Rectangle().fill(Color(nsColor: .separatorColor)).frame(height: 1)
+            .padding(.horizontal, 9).padding(.vertical, 4)
+    }
+}
+
+/// A line of the panel that behaves like a menu item: system accent highlight under the pointer.
+private struct MenuItem: View {
+    let title: String
+    let systemImage: String
+    let shortcut: String
+    let action: () -> Void
+
+    init(_ title: String, systemImage: String, shortcut: String, action: @escaping () -> Void) {
+        self.title = title
+        self.systemImage = systemImage
+        self.shortcut = shortcut
+        self.action = action
+    }
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "iphone")
-                .font(.system(size: 28)).foregroundStyle(palette.accentText)
-                .frame(width: 64, height: 64).background(Circle().fill(palette.accentSoft))
-            Text("Aucun téléphone associé").font(Typeface.inter(16, .bold))
-            Text("Associe ton téléphone Android pour copier d'un côté et coller de l'autre.")
-                .font(Typeface.inter(13)).foregroundStyle(palette.muted).multilineTextAlignment(.center)
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage).frame(width: 14)
+                Text(title)
+                Spacer(minLength: 8)
+                Text(shortcut).opacity(0.75)
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .buttonStyle(MenuItemStyle())
     }
+}
+
+private struct MenuItemStyle: ButtonStyle {
+    @State private var hovered = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13))
+            .foregroundStyle(hovered ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .padding(.horizontal, 9).padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 6).fill(hovered ? Color.accentColor : .clear))
+            .contentShape(Rectangle())
+            .onHover { hovered = $0 }
+    }
+}
+
+/// A paired phone. Clicking it (or a right click) opens a native menu with its details and "Oublier".
+private struct PhoneItem: View {
+    let phone: PhoneRow
+    let onForget: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: showMenu) {
+            HStack(spacing: 9) {
+                Image(systemName: "iphone")
+                    .font(.system(size: 13))
+                    .foregroundStyle(phone.connected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(phone.connected ? Color.accentColor : Color.primary.opacity(0.09)))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(phone.name).font(.system(size: 13)).lineLimit(1)
+                    Text(phone.detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                    .opacity(hovered ? 1 : 0)
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 7).fill(hovered ? Color.primary.opacity(0.08) : .clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .contextMenu {
+            Text(phone.connected ? "Connecté" : "Hors ligne")
+            Text("Associé le \(phone.pairedOn)")
+            Divider()
+            Button("Oublier ce téléphone…", action: onForget)
+        }
+        .accessibilityLabel("\(phone.name), \(phone.detail)")
+    }
+
+    private func showMenu() {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        for line in [phone.connected ? "Connecté" : "Hors ligne", "Associé le \(phone.pairedOn)"] {
+            let item = NSMenuItem(title: line, action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let forget = ClosureMenuItem(title: "Oublier ce téléphone…", action: onForget)
+        forget.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
+        menu.addItem(forget)
+        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+}
+
+/// NSMenuItem that runs a closure.
+private final class ClosureMenuItem: NSMenuItem {
+    private let run: () -> Void
+
+    init(title: String, action: @escaping () -> Void) {
+        run = action
+        super.init(title: title, action: #selector(fire), keyEquivalent: "")
+        target = self
+    }
+
+    required init(coder: NSCoder) { fatalError("not used") }
+
+    @objc private func fire() { run() }
 }
 
 /// "Associer un téléphone" window: opens and closes the single-use pairing token.
@@ -241,12 +309,16 @@ struct PairingView: View {
     @State private var copied = false
 
     var body: some View {
-        PairingContent(qr: model.pairingURI.flatMap(QRCode.image(for:)), copied: copied) {
-            guard let uri = model.pairingURI else { return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(uri, forType: .string)
-            copied = true
-        }
+        PairingContent(
+            qr: model.pairingURI.flatMap(QRCode.image(for:)), copied: copied,
+            onCopy: {
+                guard let uri = model.pairingURI else { return }
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(uri, forType: .string)
+                copied = true
+            },
+            onDone: { dismissWindow(id: "pairing") }
+        )
         .onAppear {
             copied = false
             model.openPairing()
@@ -256,73 +328,86 @@ struct PairingView: View {
     }
 }
 
-/// "Associer un téléphone" screen of the design board.
+/// Standard window content: QR code on the left, steps on the right, system buttons at the bottom.
 struct PairingContent: View {
     let qr: NSImage?
     let copied: Bool
     let onCopy: () -> Void
-    @Environment(\.colorScheme) private var scheme
+    let onDone: () -> Void
 
     var body: some View {
-        let p = Palette.of(scheme)
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 12) {
-                RohyMark(size: 40, disc: p.logo)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Associer un téléphone").font(Typeface.inter(20, .bold))
-                    Text("Ouvre Rohy sur ton téléphone, puis scanne ce code.").font(Typeface.inter(13)).foregroundStyle(p.muted)
-                }
-            }
-            VStack(spacing: 18) {
-                if let qr {
-                    // Dark on white in both appearances so that every camera reads it.
-                    ZStack {
-                        Image(nsImage: qr).interpolation(.none).resizable().frame(width: 232, height: 232)
-                        RohyMark(size: 36, disc: Palette.brand)
-                            .padding(4).background(RoundedRectangle(cornerRadius: 12).fill(.white))
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 24) {
+                QRTile(qr: qr)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Scanne ce code avec ton téléphone").font(.system(size: 17, weight: .semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Step(number: 1, text: "Ouvre Rohy sur ton Android.")
+                        Step(number: 2, text: "Touche « Scanner le QR code ».")
+                        Step(number: 3, text: "Vise ce code : l'association se fait toute seule.")
                     }
-                    .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(.white))
-                } else {
-                    Text("Le serveur démarre…").font(Typeface.inter(14)).foregroundStyle(p.muted).frame(width: 248, height: 248)
+                    Text("Pas de caméra ? Copie le code, envoie-le sur ton téléphone, puis touche « Coller le code d'association » dans l'app.")
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                HStack(spacing: 10) {
-                    Dot(color: p.accentText)
-                    Text("En attente du scan…").font(Typeface.inter(13, .medium)).foregroundStyle(p.accentText)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                .background(Capsule().fill(p.accentSoft))
+                .padding(.top, 6)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity)
-            .card(p)
-            HStack(spacing: 12) {
-                Rectangle().fill(p.line).frame(height: 1)
-                Text("Sans caméra").font(Typeface.inter(12)).foregroundStyle(p.muted).fixedSize()
-                Rectangle().fill(p.line).frame(height: 1)
-            }
-            VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                Spacer()
                 Button(action: onCopy) {
-                    Label(copied ? "Code copié" : "Copier le code d'association", systemImage: copied ? "checkmark" : "doc.on.doc")
+                    if copied {
+                        Label { Text("Code copié") } icon: { Image(systemName: "checkmark").foregroundStyle(.green) }
+                    } else {
+                        Label("Copier le code", systemImage: "doc.on.doc")
+                    }
                 }
-                .buttonStyle(SecondaryButtonStyle(palette: p))
                 .disabled(qr == nil)
-                Text("Colle-le ensuite dans l'app Rohy du téléphone.")
-                    .font(Typeface.inter(12)).foregroundStyle(p.muted).frame(maxWidth: .infinity)
+                Button("Terminé", action: onDone)
+                    .keyboardShortcut(.defaultAction)
             }
-            Spacer(minLength: 0)
-            Label {
-                Text("Code à usage unique, valable tant que cette fenêtre est ouverte. Les échanges sont chiffrés de bout en bout.")
-            } icon: {
-                Image(systemName: "lock")
-            }
-            .font(Typeface.inter(12)).foregroundStyle(p.muted)
-            .fixedSize(horizontal: false, vertical: true)
+            .controlSize(.large)
+            .padding(.top, 20)
         }
-        .padding(28)
-        .frame(width: 440, height: 640)
-        .background(p.ground)
-        .foregroundStyle(p.ink)
+        .padding(.horizontal, 24).padding(.top, 10).padding(.bottom, 20)
+        .frame(width: 560)
+    }
+}
+
+private struct Step: View {
+    let number: Int
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("\(number).").foregroundStyle(.secondary).frame(width: 14, alignment: .leading)
+            Text(text).fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 13))
+    }
+}
+
+/// QR code dark on white in both appearances so that every camera reads it, with the Rohy mark in the center.
+private struct QRTile: View {
+    let qr: NSImage?
+
+    var body: some View {
+        ZStack {
+            if let qr {
+                Image(nsImage: qr).interpolation(.none).resizable().frame(width: 184, height: 184)
+                RohyMark(size: 34)
+                    .padding(4).background(RoundedRectangle(cornerRadius: 10).fill(.white))
+            } else {
+                VStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Le serveur démarre…").font(.system(size: 12)).foregroundStyle(.black.opacity(0.6))
+                }
+            }
+        }
+        .frame(width: 208, height: 208)
+        .background(RoundedRectangle(cornerRadius: 12).fill(.white))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5))
+        .accessibilityLabel("QR code d'association")
     }
 }
 
