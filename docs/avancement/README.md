@@ -36,4 +36,5 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Journal
 
+- [2026-11-19](2026-11-19.md) — release 0.1.0 : plantage du scan Android (R8) corrigé, garde-fou en CI.
 - [2026-11-18](2026-11-18.md) — étude, MVP texte dans les deux sens, premier test réel, CI dans kinga-org, début de la phase 06.

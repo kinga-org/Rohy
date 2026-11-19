@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full validation suite: tests, coverage thresholds, interop test and debug build.
+# Full validation suite: tests, coverage thresholds, interop test, debug and release builds.
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/check-mac.sh"

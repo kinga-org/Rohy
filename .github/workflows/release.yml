@@ -12,7 +12,7 @@ on:
         description: "Version sans le v (ex. 0.1.0)"
         required: true
   pull_request:
-    paths: [".github/workflows/release.yml", "mac/scripts/bundle.sh"]
+    paths: [".github/workflows/release.yml", "mac/scripts/bundle.sh", "android/app/proguard-rules.pro"]
 
 permissions:
   contents: write
@@ -69,6 +69,8 @@ jobs:
           ROHY_KEY_ALIAS: ${{ secrets.ROHY_KEY_ALIAS }}
           ROHY_KEY_PASSWORD: ${{ secrets.ROHY_KEY_PASSWORD }}
         run: ./gradlew --no-daemon :app:assembleRelease -ProhyVersion="$VERSION" -ProhyVersionCode="${{ github.run_number }}"
+      - name: Check what R8 kept (the QR scanner needs it)
+        run: scripts/check-r8-registrars.sh
       - name: Name the APK
         run: |
           # Without the release key the APK is signed with a throwaway debug key: say so in its name.
