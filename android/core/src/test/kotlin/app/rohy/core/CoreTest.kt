@@ -159,6 +159,16 @@ class PairingPayloadTest {
     }
 
     @Test
+    fun keepsNonAsciiComputerNames() {
+        // A real Mac name: typographic apostrophe (3 UTF-8 bytes) and accents, as URLComponents encodes them.
+        val uri = "rohy://pair?v=1&pk=$pk&t=$token&n=RAHERINOTOAVINA%E2%80%99s%20MacBook%20Pro%20%C3%A9t%C3%A9&h=192.168.88.3&p=47823"
+        val payload = PairingPayload.parse(uri)!!
+        assertEquals("RAHERINOTOAVINA’s MacBook Pro été", payload.name)
+        assertEquals(uri, payload.uri)
+        assertEquals(payload, PairingPayload.parse(payload.uri))
+    }
+
+    @Test
     fun rejectsInvalidUris() {
         val invalid = listOf(
             "https://pair?v=1", "rohy://pair?v=2&pk=$pk&t=$token&n=M&p=1",

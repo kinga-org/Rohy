@@ -114,8 +114,9 @@ data class PairingPayload(
         }
 
         // A literal "+" stays a "+" (RFC 3986 query), unlike HTML form encoding.
-        private fun decode(value: String) = URLDecoder.decode(value.replace("+", "%2B"), Charsets.UTF_8)
+        // The String-charset overloads: the Charset ones only exist from Android 13 (crash on Android 10).
+        private fun decode(value: String) = URLDecoder.decode(value.replace("+", "%2B"), "UTF-8")
 
-        private fun encode(value: String) = URLEncoder.encode(value, Charsets.UTF_8).replace("+", "%20")
+        private fun encode(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
     }
 }

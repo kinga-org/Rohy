@@ -4,6 +4,14 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kover)
+    // `core` is plain Kotlin compiled against a recent JDK: it could call Java APIs Android only gained later
+    // (URLDecoder.decode(String, Charset) is Android 13+ and crashed pairing on Android 10). Animal Sniffer
+    // checks every call against the Android 10 API (the app's minSdk) and fails `check` otherwise.
+    alias(libs.plugins.animalsniffer)
+}
+
+animalsniffer {
+    sourceSets = listOf(project.sourceSets["main"])
 }
 
 kotlin {
@@ -11,6 +19,7 @@ kotlin {
 }
 
 dependencies {
+    signature("${libs.android.api.signature.get()}@signature")
     api(libs.okhttp)
     implementation(libs.bouncycastle)
     implementation(libs.serialization.json)

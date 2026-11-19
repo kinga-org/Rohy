@@ -46,6 +46,18 @@ class ReliabilityChecksTest {
     }
 
     @Test
+    fun huaweiAndHonorGetTheirOwnManualChecks() {
+        val checks = reliabilityChecks(healthy.copy(manufacturer = "HUAWEI"))
+        assertEquals(
+            listOf(CheckId.NOTIFICATIONS, CheckId.BATTERY_OPTIMIZATION, CheckId.BACKGROUND_RESTRICTION, CheckId.HUAWEI_APP_LAUNCH, CheckId.RECENTS_LOCK),
+            checks.map { it.id },
+        )
+        assertTrue(checks.last().explanation.contains("vers le bas"))
+        assertTrue(healthy.copy(manufacturer = "HONOR").isHuawei)
+        assertTrue(!healthy.isHuawei)
+    }
+
+    @Test
     fun problemsAreFlaggedToFix() {
         val checks = reliabilityChecks(DeviceFacts("Google", false, false, false, true))
         assertEquals(CheckId.LOCAL_NETWORK, checks.first().id)

@@ -46,11 +46,16 @@ data class DeviceFacts(
     val backgroundRestricted: Boolean,
 ) {
     val isSamsung: Boolean get() = manufacturer.equals("samsung", ignoreCase = true)
+
+    /** Huawei and Honor (EMUI, Magic UI) share the "Lancement d'applications" battery screen. */
+    val isHuawei: Boolean get() = manufacturer.equals("huawei", ignoreCase = true) || manufacturer.equals("honor", ignoreCase = true)
 }
 
 enum class CheckState { OK, TO_FIX, TO_CHECK }
 
-enum class CheckId { LOCAL_NETWORK, NOTIFICATIONS, BATTERY_OPTIMIZATION, BACKGROUND_RESTRICTION, SAMSUNG_NEVER_SLEEPING, RECENTS_LOCK }
+enum class CheckId {
+    LOCAL_NETWORK, NOTIFICATIONS, BATTERY_OPTIMIZATION, BACKGROUND_RESTRICTION, SAMSUNG_NEVER_SLEEPING, HUAWEI_APP_LAUNCH, RECENTS_LOCK,
+}
 
 data class ReliabilityCheck(val id: CheckId, val title: String, val explanation: String, val state: CheckState)
 
@@ -101,6 +106,23 @@ fun reliabilityChecks(facts: DeviceFacts): List<ReliabilityCheck> = buildList {
             ReliabilityCheck(
                 CheckId.RECENTS_LOCK, "Garder ouvert dans les apps récentes",
                 "Ouvre les apps récentes, touche l'icône de Rohy, puis « Garder ouvert ».",
+                CheckState.TO_CHECK,
+            ),
+        )
+    }
+    // Huawei closes apps it manages itself, whatever the Android battery optimization says.
+    if (facts.isHuawei) {
+        add(
+            ReliabilityCheck(
+                CheckId.HUAWEI_APP_LAUNCH, "Lancement d'applications",
+                "Paramètres → Batterie → Lancement d'applications → Rohy : désactive la gestion automatique, puis laisse les trois options activées.",
+                CheckState.TO_CHECK,
+            ),
+        )
+        add(
+            ReliabilityCheck(
+                CheckId.RECENTS_LOCK, "Verrouiller dans les apps récentes",
+                "Ouvre les apps récentes et fais glisser la carte de Rohy vers le bas pour la verrouiller.",
                 CheckState.TO_CHECK,
             ),
         )
