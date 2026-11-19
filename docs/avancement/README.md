@@ -14,7 +14,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 | [05 — Prototype OTP via appareil compagnon](../phases/05-prototype-otp-compagnon.md) | À faire | Tout |
 | [06 — Fiabilité et accueil Samsung](../phases/06-fiabilite-samsung.md) | En cours | Test d'endurance de 24 h |
 | [07 — Cœur Rust et serveur pour le bureau](../phases/07-coeur-rust.md) | Terminée | — |
-| [08 — App de bureau Windows et Linux (iced)](../phases/08-app-bureau-iced.md) | En cours | Installateurs (`.msi`, `.deb` / AppImage), essais sur un vrai Windows et un vrai Linux |
+| [08 — App de bureau Windows et Linux (iced)](../phases/08-app-bureau-iced.md) | En cours | Installateurs (`.msi`, `.deb` / AppImage), essai sur un vrai Windows (Linux essayé : fonctionne) |
 | [09 — Plusieurs ordinateurs par téléphone](../phases/09-plusieurs-ordinateurs.md) | À faire | Tout |
 
 ## Releases
@@ -22,7 +22,8 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 - Dernière publiée : **0.1.4** (Android, macOS, Windows, Linux), APK signé avec la clé de test.
 - Dans `main`, pas encore publié : Android Lint en CI, boutons « Ouvrir » Samsung/Huawei corrigés.
 - Testé sur téléphone : Samsung S24 Ultra (Android 16), Huawei P30 Pro (Android 10). Non testés :
-  Android 11 à 15 et 17, `Rohy.exe` sur Windows, l'app Linux sur un vrai bureau.
+  Android 11 à 15 et 17, `Rohy.exe` sur Windows. Bureau : l'app Linux fonctionne sur le portable du
+  propriétaire.
 
 ## Backlog (docs/features)
 
@@ -36,7 +37,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Prochaines étapes
 
-1. Phase 08 : essayer l'app Linux sur le portable du propriétaire, puis `Rohy.exe` sur un vrai Windows.
+1. Phase 08 : essayer `Rohy.exe` sur un vrai Windows.
 2. Phase 06 : test d'endurance de 24 h, écran éteint, changement de Wi-Fi et veille du Mac.
 3. Phase 08 : installateurs `.msi` et `.deb` / AppImage.
 4. Phase 09 : plusieurs ordinateurs par téléphone.

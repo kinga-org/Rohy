@@ -24,7 +24,8 @@ Phase 07.
 - [x] Stockage de la clé dans le trousseau du système
 - [x] Archives portables dans les releases GitHub (Windows `.zip`, Linux x86_64 `.tar.gz`)
 - [ ] Paquets d'installation (`.msi`, `.deb` / AppImage)
-- [ ] Tests manuels Windows 11 et Linux (X11 ou KDE)
+- [x] Test manuel Linux : l'app de la release fonctionne sur le portable du propriétaire (2026-11-19)
+- [ ] Test manuel Windows 11
 
 ## Notes de réalisation
 - `iced::daemon` : aucune fenêtre au démarrage ; fenêtres « Associer un téléphone » et « Téléphones associés »
