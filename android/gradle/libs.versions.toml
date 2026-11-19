@@ -11,6 +11,8 @@ activityCompose = "1.12.4"
 codeScanner = "16.1.0"
 
 [libraries]
+# Android 10 (API 29, the minSdk) Java API signature for Animal Sniffer.
+android-api-signature = { module = "com.toasttab.android:gummy-bears-api-29", version = "0.12.0" }
 bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
@@ -29,3 +31,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }

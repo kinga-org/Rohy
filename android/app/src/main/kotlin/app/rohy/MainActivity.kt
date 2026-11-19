@@ -173,7 +173,10 @@ class MainActivity : ComponentActivity() {
             CheckId.BACKGROUND_RESTRICTION -> appDetails
             CheckId.SAMSUNG_NEVER_SLEEPING -> SAMSUNG_BATTERY_SCREENS.map { Intent().setComponent(it) }
                 .firstOrNull { it.resolveActivity(packageManager) != null } ?: appDetails
-            CheckId.RECENTS_LOCK -> return toast("Ouvre les apps récentes, touche l'icône de Rohy, puis « Garder ouvert ».")
+            // Huawei protects this screen on some versions: the app's info page is opened instead.
+            CheckId.HUAWEI_APP_LAUNCH -> HUAWEI_APP_LAUNCH_SCREENS.map { Intent().setComponent(it) }
+                .firstOrNull { it.resolveActivity(packageManager) != null } ?: appDetails
+            CheckId.RECENTS_LOCK -> return toast(checks.first { it.id == id }.explanation)
         }
         runCatching { startActivity(intent) }.onFailure { startActivity(appDetails) }
     }
@@ -183,6 +186,11 @@ class MainActivity : ComponentActivity() {
 
 private const val REQUEST_STARTUP = 1
 private const val REQUEST_LOCAL_NETWORK = 2
+
+private val HUAWEI_APP_LAUNCH_SCREENS = listOf(
+    ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+    ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity"),
+)
 
 private val SAMSUNG_BATTERY_SCREENS = listOf(
     ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),
