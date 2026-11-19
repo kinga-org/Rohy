@@ -1,6 +1,6 @@
 # Phase 07 — Cœur Rust et serveur pour le bureau
 
-**Statut :** en cours (démarrée le 2026-11-18)
+**Statut :** terminée (2026-11-19) — critères d'acceptation remplis.
 
 ## Objectif
 Écrire la troisième implémentation du protocole v1, en Rust, avec le serveur WebSocket + Bonjour, pour
@@ -22,7 +22,7 @@ Phases 01–02 (protocole et vecteurs de test).
 - [x] `rohy-server` + test d'intégration Rust (client WebSocket réel)
 - [x] `rohy-harness` Rust : le test d'interopérabilité Kotlin passe contre lui
 - [x] `scripts/check-desktop.sh` : fmt, clippy, tests, couverture ≥ 80 %
-- [ ] CI : tâches Ubuntu et Windows
+- [x] CI : tâches Ubuntu et Windows (`desktop` dans `.github/workflows/ci.yml`, vertes à chaque PR depuis le 2026-11-18)
 
 ## Résultats (2026-11-18)
 - Les vecteurs partagés passent du premier coup : Swift, Kotlin et Rust produisent les mêmes clés et trames.
