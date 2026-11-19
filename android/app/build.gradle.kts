@@ -50,6 +50,13 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    // Run by scripts/check-android.sh (CI, pre-push): errors fail the build, including NewApi (an API newer
+    // than minSdk called without a version check). The shared `core` module is checked by Animal Sniffer.
+    lint {
+        abortOnError = true
+        warningsAsErrors = false
+    }
 }
 
 dependencies {
