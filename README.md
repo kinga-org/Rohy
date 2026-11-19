@@ -13,7 +13,7 @@ malgache.
 | Android 10+ | Kotlin + Compose | APK dans les [releases](https://github.com/kinga-org/Rohy/releases) |
 | macOS 14+ | Swift, barre des menus | `Rohy.app` dans les releases |
 | Windows 10/11 | Rust + iced, zone de notification | `Rohy.exe` dans les releases |
-| Linux | Rust + iced (même app que Windows) | pas encore publiée, à compiler depuis `desktop/` |
+| Linux (x86_64) | Rust + iced (même app que Windows) | `Rohy-linux-x64-….tar.gz` dans les releases |
 
 ## Structure
 
@@ -79,7 +79,7 @@ CODESIGN_IDENTITY="Apple Development" mac/scripts/bundle.sh
 
 ## Releases (téléchargements GitHub)
 
-L'action « Releases » (`.github/workflows/release.yml`) construit les trois apps et les joint à une
+L'action « Releases » (`.github/workflows/release.yml`) construit les apps et les joint à une
 release GitHub **brouillon** : rien n'est public tant qu'elle n'est pas publiée depuis GitHub.
 
 | Fichier | Contenu |
@@ -87,6 +87,7 @@ release GitHub **brouillon** : rien n'est public tant qu'elle n'est pas publiée
 | `Rohy-android-<version>.apk` | App Android, à installer à la main (sources inconnues autorisées) |
 | `Rohy-macOS-<version>.zip` | `Rohy.app` universelle (Apple Silicon et Intel) |
 | `Rohy-windows-x64-<version>.zip` | `Rohy.exe` portable, sans installateur |
+| `Rohy-linux-x64-<version>.tar.gz` | Exécutable `rohy` portable (x86_64, glibc 2.35+ : Ubuntu 22.04, Debian 12, Fedora 36 ou plus récents) |
 
 Créer une release : pousser une étiquette, par exemple `git tag v0.1.0 && git push origin v0.1.0`, ou
 lancer l'action depuis l'onglet Actions avec une version. Une PR qui modifie l'action construit seulement.
@@ -102,6 +103,11 @@ Signatures, à savoir avant de partager :
   La diffusion sans avertissement demandera un certificat Developer ID et la notarisation.
 - **Windows** : non signé ; SmartScreen affiche un avertissement (« Informations complémentaires » →
   « Exécuter quand même »).
+- **Linux** : extraire puis lancer `./rohy` (`tar -xzf Rohy-linux-x64-<version>.tar.gz && Rohy/rohy`).
+  L'icône passe par la zone de notification (StatusNotifierItem) : native sous KDE, Xfce, Cinnamon ;
+  sous GNOME, il faut l'extension « AppIndicator and KStatusNotifierItem Support » (installée d'office
+  sur Ubuntu). La clé privée va dans le trousseau du bureau (Secret Service : GNOME Keyring ou KWallet).
+  Sous GNOME en Wayland, la copie n'est pas détectée toute seule : envoyer depuis le menu de l'icône.
 
 ## Sécurité
 

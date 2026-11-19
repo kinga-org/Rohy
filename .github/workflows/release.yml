@@ -1,6 +1,6 @@
 name: Releases
 
-# Builds Android, macOS and Windows and attaches them to a draft GitHub release.
+# Builds Android, macOS, Windows and Linux and attaches them to a draft GitHub release.
 # - push a tag `v0.1.0`, or run it from Actions with a version: creates the draft release;
 # - a pull request that changes this file: builds only (artifacts on the run), no release.
 on:
@@ -127,9 +127,32 @@ jobs:
           name: windows
           path: out/*.zip
 
+  linux:
+    needs: version
+    # The oldest supported runner: the binary then runs on distributions with glibc 2.35 or newer.
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build rohy (x86_64)
+        working-directory: desktop
+        run: cargo build --release -p rohy-desktop
+      - name: Archive
+        run: |
+          mkdir -p out pkg/Rohy
+          cp desktop/target/release/rohy-desktop pkg/Rohy/rohy
+          cp desktop/apps/rohy-desktop/assets/fonts/OFL.txt pkg/Rohy/Inter-OFL.txt
+          tar -C pkg -czf "out/Rohy-linux-x64-$VERSION.tar.gz" Rohy
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: out/*.tar.gz
+
   release:
     if: github.event_name != 'pull_request'
-    needs: [version, android, macos, windows]
+    needs: [version, android, macos, windows, linux]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.version.outputs.value }}

@@ -22,7 +22,8 @@ Phase 07.
 - [x] Fenêtre d'appairage et liste des appareils
 - [x] Surveillance et écriture du presse-papiers par système
 - [x] Stockage de la clé dans le trousseau du système
-- [ ] Paquets d'installation
+- [x] Archives portables dans les releases GitHub (Windows `.zip`, Linux x86_64 `.tar.gz`)
+- [ ] Paquets d'installation (`.msi`, `.deb` / AppImage)
 - [ ] Tests manuels Windows 11 et Linux (X11 ou KDE)
 
 ## Notes de réalisation
