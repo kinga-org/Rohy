@@ -83,7 +83,8 @@ class ClipTileService : TileService() {
         if (Build.VERSION.SDK_INT >= 34) {
             startActivityAndCollapse(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE))
         } else {
-            @Suppress("DEPRECATION")
+            // Only before Android 14, where the PendingIntent overload does not exist.
+            @Suppress("DEPRECATION", "StartActivityAndCollapseDeprecated")
             startActivityAndCollapse(intent)
         }
     }

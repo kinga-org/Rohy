@@ -165,20 +165,22 @@ class MainActivity : ComponentActivity() {
     private fun fix(id: CheckId) {
         val packageUri = Uri.parse("package:$packageName")
         val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri)
-        val intent = when (id) {
+        val candidates = when (id) {
             CheckId.LOCAL_NETWORK -> return requestPermissions(arrayOf(LOCAL_NETWORK_PERMISSION), REQUEST_LOCAL_NETWORK)
-            CheckId.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-            CheckId.BATTERY_OPTIMIZATION -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri)
-            CheckId.BACKGROUND_RESTRICTION -> appDetails
+            CheckId.NOTIFICATIONS -> listOf(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+            )
+            CheckId.BATTERY_OPTIMIZATION -> listOf(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri))
+            CheckId.BACKGROUND_RESTRICTION -> emptyList()
             CheckId.SAMSUNG_NEVER_SLEEPING -> SAMSUNG_BATTERY_SCREENS.map { Intent().setComponent(it) }
-                .firstOrNull { it.resolveActivity(packageManager) != null } ?: appDetails
             // Huawei protects this screen on some versions: the app's info page is opened instead.
             CheckId.HUAWEI_APP_LAUNCH -> HUAWEI_APP_LAUNCH_SCREENS.map { Intent().setComponent(it) }
-                .firstOrNull { it.resolveActivity(packageManager) != null } ?: appDetails
             CheckId.RECENTS_LOCK -> return toast(checks.first { it.id == id }.explanation)
         }
-        runCatching { startActivity(intent) }.onFailure { startActivity(appDetails) }
+        // Each screen is tried in turn: since Android 11, resolveActivity cannot see other apps' screens
+        // without declaring them, and a protected screen only fails when started.
+        val opened = candidates.any { runCatching { startActivity(it) }.isSuccess }
+        if (!opened) startActivity(appDetails)
     }
 
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
