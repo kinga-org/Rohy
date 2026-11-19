@@ -126,6 +126,8 @@ struct PanelContent: View {
         }
         .padding(5)
         .frame(width: 300)
+        // System menus show no focus ring; the panel's first button would otherwise get a square one on open.
+        .focusEffectDisabled()
     }
 }
 
