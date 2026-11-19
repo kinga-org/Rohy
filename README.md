@@ -31,14 +31,17 @@ L'app Mac (Swift, `mac/`) et l'app Windows/Linux (Rust + iced, `desktop/apps/roh
 codes différents qui doivent rester identiques pour l'utilisateur. **Toute modification de l'une impose
 de vérifier l'autre**, dans la même PR ou dans une PR liée :
 
-- mêmes écrans, libellés, états (démarrage, attente, connecté, erreur), couleurs claires et sombres,
-  choix « Apparence » et comportements (association, oubli, fermeture de la fenêtre du QR code) ;
-- même maquette de référence : canvas « Rohy bureau — refonte »
-  (https://claude.ai/artifact/StchZXp6RPY4E4Nv2CwSc9) ;
+- mêmes fonctions, mêmes états (démarrage, attente, connecté, erreur), mêmes libellés et mêmes
+  comportements (association, oubli, fermeture de la fenêtre du QR code) ;
 - les textes et règles d'affichage partagés (temps relatifs, dates, ligne d'état) sont testés des deux
   côtés avec les mêmes valeurs attendues (`DesktopPresentation` en Swift, `state.rs` en Rust) ;
-- seule l'enveloppe propre au système peut différer : sur Mac, un panneau dans la barre des menus ;
-  sur Windows et Linux, le menu natif de l'icône et une fenêtre « Téléphones associés ».
+- l'apparence, elle, suit chaque système :
+  - Mac : composants natifs (vrai menu `NSMenu` dans la barre des menus, fenêtre standard, police,
+    couleur d'accent et mode clair ou sombre du système). Maquette : canvas
+    « Rohy macOS — natif » (https://claude.ai/artifact/7VWrpCw2XEDyaH4Ze1tSRr) ;
+  - Windows et Linux : thème Rohy (vert foncé, Inter, cartes), choix « Apparence » dans le menu de
+    l'icône. Maquette : canvas « Rohy bureau — refonte »
+    (https://claude.ai/artifact/StchZXp6RPY4E4Nv2CwSc9).
 
 La description de la PR indique ce qui a été vérifié de l'autre côté, ou pourquoi rien n'est à faire.
 

@@ -12,12 +12,6 @@ final class AppModel: ObservableObject {
     @Published private(set) var trusted: [TrustedDevice] = []
     @Published private(set) var pairingURI: String?
     @Published private(set) var lastActivity: DesktopPresentation.Activity?
-    @Published var appearance: Appearance = Appearance(rawValue: UserDefaults.standard.string(forKey: "appearance") ?? "") ?? .system {
-        didSet {
-            UserDefaults.standard.set(appearance.rawValue, forKey: "appearance")
-            NSApp.appearance = appearance.nsAppearance
-        }
-    }
     @Published private(set) var startupError: String?
     /// Incremented on each successful pairing, so the pairing window can close itself.
     @Published private(set) var pairingsCompleted = 0
@@ -34,8 +28,8 @@ final class AppModel: ObservableObject {
         store = FileTrustedDeviceStore(url: support.appendingPathComponent("Rohy/devices.json"))
         trusted = store.all()
         start()
-        let saved = appearance
-        DispatchQueue.main.async { NSApp.appearance = saved.nsAppearance }
+        // Like other Mac apps, Rohy follows the system's light or dark mode; 0.1 let you force one.
+        UserDefaults.standard.removeObject(forKey: "appearance")
     }
 
     var port: UInt16? {

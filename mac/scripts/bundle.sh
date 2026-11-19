@@ -28,7 +28,5 @@ fi
 if [[ -n "${ROHY_BUILD:-}" ]]; then
   plutil -replace CFBundleVersion -string "$ROHY_BUILD" "$APP/Contents/Info.plist"
 fi
-# Inter (OFL), registered by macOS through ATSApplicationFontsPath.
-cp -R Resources/Fonts "$APP/Contents/Resources/Fonts"
 codesign --force --sign "${CODESIGN_IDENTITY:--}" --options runtime "$APP"
 echo "Built $APP"
