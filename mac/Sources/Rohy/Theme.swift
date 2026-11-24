@@ -26,10 +26,10 @@ enum LogoGeometry {
 }
 
 /// Rohy's mark, the one brand element of the native Mac app (center of the pairing QR code): the rope on the
-/// Rohy blueberry, same as the Android and Windows/Linux apps.
+/// Rohy lagoon, same as the Android and Windows/Linux apps.
 struct RohyMark: View {
-    static let brand = Color(red: 0x56 / 255, green: 0x53 / 255, blue: 0xD0 / 255)
-    static let peach = Color(red: 0xFF / 255, green: 0x9F / 255, blue: 0x6E / 255)
+    static let brand = Color(red: 0x1B / 255, green: 0x6E / 255, blue: 0x85 / 255)
+    static let sun = Color(red: 0xF5 / 255, green: 0xB7 / 255, blue: 0x1E / 255)
 
     let size: CGFloat
 
@@ -40,7 +40,7 @@ struct RohyMark: View {
                          with: .color(Self.brand))
             context.stroke(Path(LogoGeometry.rope), with: .color(.white),
                            style: StrokeStyle(lineWidth: LogoGeometry.ropeWidth, lineCap: .round))
-            context.fill(Path(LogoGeometry.ends), with: .color(Self.peach))
+            context.fill(Path(LogoGeometry.ends), with: .color(Self.sun))
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)

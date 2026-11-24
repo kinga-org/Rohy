@@ -1,28 +1,32 @@
-# Phase 11 — Nouvelle identité « Myrtille & Pêche » (Android, Mac, Windows, Linux)
+# Phase 11 — Nouvelle identité « Lagon & Soleil », logo « La corde » (Android, Mac, Windows, Linux)
 
 **Statut :** en cours (démarrée le 2026-11-24)
 
 ## Objectif
-Donner à l'app Android un look moderne et mignon que les gens ont envie d'utiliser, sans quitter les
-composants Android standard (Material 3). Pas d'effet verre : la piste « Liquid Glass » a été écartée.
+Donner à Rohy un look moderne et mignon que les gens ont envie d'utiliser, le même sur chaque
+système, sans quitter les composants standard (Material 3 sur Android, AppKit sur Mac). Pas d'effet
+verre : la piste « Liquid Glass » a été écartée.
 
 ## Maquette
 Canvas « Rohy Android — refonte » (https://claude.ai/artifact/EytQs4bmUWfonPhdtqfp16), rangée
-« Nouvelle identité — moderne et mignonne ». Écrans de référence : « Accueil — Myrtille & Pêche
-(retenu) » et « Accueil — Myrtille (sombre, retenu) ». Planches « Nouveaux logos » (piste 2, « Le presse-papiers ») et « Couleurs » (Myrtille &
-Pêche).
+« Nouvelle identité — moderne et mignonne ». Références : « Accueil — Lagon & Soleil, logo « La
+corde » (retenu) », « Accueil — Lagon (sombre, gris Android, retenu) » et « « La corde » sur toutes
+les surfaces ». Mac et bureau : canvas « Rohy macOS — natif » et « Rohy bureau — refonte » (mise en
+page des rangées « Myrtille », logo et couleurs remplacés par le choix final).
 
 ## Choix validés
-- Palette Myrtille & Pêche :
-  - clair : principale `#5653D0`, douce `#E5E4FB`, accent `#FF9F6E`, accent doux `#FFE8DA`,
-    fond `#F8F7FD`, surface `#FFFFFF`, texte `#1D1B39`, texte secondaire `#57557A` ;
-  - sombre : gris neutres d'Android (demande du propriétaire, pas de fond bleu) : fond `#1C1B1F`,
-    surface et carte de connexion `#2B2930`, texte `#E6E1E5`, texte secondaire `#CAC4D0`, filets
-    `#3A3840` ; la myrtille reste pour les accents : principale `#BDBBFF`, pastilles `#3B3870`,
-    accent `#FFB794`, accent doux `#5A3424`.
-- Logo : d'abord « Le presse-papiers » (presse-papiers qui sourit) ; en essai depuis le 24 nov. : « La
-  corde » (corde blanche aux bouts pêche) sur carré arrondi `#5653D0`. Icône de
-  notification : silhouette d'une seule couleur.
+- Historique du 24 nov. : Myrtille & Pêche + « Le presse-papiers » d'abord, puis le propriétaire a
+  préféré le logo « La corde » dans ses couleurs d'origine, et toute l'app dans ces couleurs.
+- Palette Lagon & Soleil :
+  - clair : principale `#1B6E85`, douce `#D3ECF3`, soleil `#F5B71E`, soleil doux `#FFF1C7`,
+    fond `#F4F9FA`, surface `#FFFFFF`, texte `#0E2A33`, texte secondaire `#47626A` ;
+  - sombre : gris neutres d'Android (demande du propriétaire, pas de fond coloré) : fond `#191C1D`,
+    surface et carte de connexion `#262A2C`, texte `#E1E3E3`, texte secondaire `#BFC8CA`, filets
+    `#353A3C` ; le bleu-vert reste pour les accents : principale `#7FD0E6`, pastilles `#1F4B57`,
+    soleil `#FFD25E`, soleil doux `#4F3D0A`.
+- Logo « La corde » : corde blanche aux bouts jaunes `#F5B71E` sur carré arrondi `#1B6E85`. En une
+  seule couleur (notification, tuile, icône thématique, barre des menus du Mac) : la corde et ses
+  deux bouts.
 - Formes : coins très arrondis (cartes 26–32 dp), bouton principal en pilule, listes groupées
   (premier et dernier élément plus arrondis), pastilles d'icône teintées (douce / accent doux).
 - Accueil connecté : illustration téléphone + ordinateur qui se sourient, reliés par un pointillé et
@@ -35,11 +39,11 @@ Pêche).
   poignée : nouvelles couleurs et formes.
 - Onglet de la poignée d'envoi aux couleurs de la palette.
 
-- Mac (maquette « Rohy macOS — natif », rangée « Identité Myrtille & Pêche — toujours natif ») :
+- Mac (maquette « Rohy macOS — natif ») :
   composants natifs inchangés ; seulement l'icône de l'app, le symbole de la barre des menus (image
   modèle, estompée sans téléphone connecté), la couleur d'accent de l'app (prise en compte quand
   l'accent du système est « Multicolore ») et le logo au centre du QR code.
-- Windows et Linux (maquette « Rohy bureau — refonte », rangée « Identité Myrtille & Pêche ») : même
+- Windows et Linux (maquette « Rohy bureau — refonte ») : même
   palette et mêmes formes qu'Android, carte « Connecté » avec l'illustration, logo dans l'en-tête, le
   QR code, l'icône de la zone de notification et de la fenêtre.
 

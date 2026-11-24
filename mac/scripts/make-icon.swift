@@ -1,5 +1,5 @@
 // Draws the macOS app icon (Resources/Assets.xcassets/AppIcon.appiconset) from the Rohy logo
-// "La corde": blueberry rounded square on the standard macOS icon grid, white rope with peach ends.
+// "La corde": lagoon rounded square on the standard macOS icon grid, white rope with sun-yellow ends.
 // Run from mac/: swift scripts/make-icon.swift
 import AppKit
 
@@ -28,13 +28,13 @@ func draw(pixels: Int) -> Data {
     context.saveGState()
     context.setShadow(offset: CGSize(width: 0, height: -10), blur: 24, color: CGColor(gray: 0, alpha: 0.28))
     context.addPath(tile)
-    context.setFillColor(color(0x5653D0))
+    context.setFillColor(color(0x1B6E85))
     context.fillPath()
     context.restoreGState()
     context.saveGState()
     context.addPath(tile)
     context.clip()
-    let gradient = CGGradient(colorsSpace: space, colors: [color(0x6865DE), color(0x4C49C2)] as CFArray,
+    let gradient = CGGradient(colorsSpace: space, colors: [color(0x2683A0), color(0x155C70)] as CFArray,
                               locations: [0, 1])!
     context.drawLinearGradient(gradient, start: CGPoint(x: 512, y: 100), end: CGPoint(x: 512, y: 924), options: [])
     context.restoreGState()
@@ -49,7 +49,7 @@ func draw(pixels: Int) -> Data {
     context.addCurve(to: CGPoint(x: 50, y: 50), control1: CGPoint(x: 27, y: 36), control2: CGPoint(x: 50, y: 32))
     context.addCurve(to: CGPoint(x: 73, y: 33), control1: CGPoint(x: 50, y: 68), control2: CGPoint(x: 73, y: 64))
     context.strokePath()
-    context.setFillColor(color(0xFF9F6E))
+    context.setFillColor(color(0xF5B71E))
     context.addEllipse(in: CGRect(x: 18, y: 60, width: 18, height: 18))
     context.addEllipse(in: CGRect(x: 64, y: 22, width: 18, height: 18))
     context.fillPath()

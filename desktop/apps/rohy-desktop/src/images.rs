@@ -35,8 +35,8 @@ fn rounded_rect(x: f32, y: f32, (x0, y0, w, h, r): (f32, f32, f32, f32, f32)) ->
     outside + qx.max(qy).min(0.0) - r
 }
 
-const BLUEBERRY: [f32; 3] = [86.0, 83.0, 208.0];
-const PEACH: [f32; 3] = [255.0, 159.0, 110.0];
+const LAGOON: [f32; 3] = [27.0, 110.0, 133.0];
+const SUN: [f32; 3] = [245.0, 183.0, 30.0];
 const WHITE: [f32; 3] = [255.0, 255.0, 255.0];
 
 /// Points along the rope "M27 67 C27 36, 50 32, 50 50 C50 68, 73 64, 73 33" (two cubic curves).
@@ -70,15 +70,15 @@ fn logo_color(u: f32, v: f32, rope: &[(f32, f32)]) -> Option<[f32; 3]> {
         .iter()
         .any(|&(x, y)| (u - x).powi(2) + (v - y).powi(2) <= 25.0);
     Some(if end(27.0, 69.0) || end(73.0, 31.0) {
-        PEACH
+        SUN
     } else if on_rope {
         WHITE
     } else {
-        BLUEBERRY
+        LAGOON
     })
 }
 
-/// Tray and window icon: the Rohy logo (rope on blueberry), 4 × 4 supersampled.
+/// Tray and window icon: the Rohy logo (rope on lagoon), 4 × 4 supersampled.
 pub fn tray_icon_rgba(size: u32) -> Vec<u8> {
     const SAMPLES: u32 = 4;
     let rope = rope_points();
@@ -130,12 +130,12 @@ mod tests {
         let pixels = tray_icon_rgba(100);
         assert_eq!(pixels.len(), 100 * 100 * 4);
         let at = |x: usize, y: usize| &pixels[(y * 100 + x) * 4..(y * 100 + x) * 4 + 4];
-        // Rounded corner: transparent; side: blueberry; rope middle: white; rope ends: peach.
+        // Rounded corner: transparent; side: lagoon; rope middle: white; rope ends: sun yellow.
         assert_eq!(at(0, 0)[3], 0);
-        assert_eq!(at(5, 50), &[86, 83, 208, 255]);
+        assert_eq!(at(5, 50), &[27, 110, 133, 255]);
         assert_eq!(at(50, 50), &[255, 255, 255, 255]);
-        assert_eq!(at(27, 69), &[255, 159, 110, 255]);
-        assert_eq!(at(73, 31), &[255, 159, 110, 255]);
-        assert_eq!(at(70, 75), &[86, 83, 208, 255]);
+        assert_eq!(at(27, 69), &[245, 183, 30, 255]);
+        assert_eq!(at(73, 31), &[245, 183, 30, 255]);
+        assert_eq!(at(70, 75), &[27, 110, 133, 255]);
     }
 }

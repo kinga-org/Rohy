@@ -1,5 +1,6 @@
-//! Look of the desktop windows, from the design board "Rohy bureau — refonte" (row "Identité Myrtille &
-//! Pêche", same identity as the Android app): light and dark palettes, Inter font, stroke icons, widget styles and the two window layouts.
+//! Look of the desktop windows, same identity as the Android app (palette Lagon & Soleil, logo
+//! "La corde"): light and dark palettes, Inter font, stroke icons, widget styles and the two window
+//! layouts.
 //!
 //! Colors are picked at draw time from the iced theme, so the windows follow the appearance
 //! chosen in the tray menu, or the system mode, without being rebuilt.
@@ -34,7 +35,7 @@ const fn weight(weight: font::Weight) -> Font {
 /// Window content size on the board.
 pub const WINDOW: (f32, f32) = (440.0, 640.0);
 
-/// Colors of one appearance (palette Myrtille & Pêche).
+/// Colors of one appearance (palette Lagon & Soleil).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Palette {
     pub ground: Color,
@@ -46,14 +47,14 @@ pub struct Palette {
     pub primary: Color,
     pub primary_hover: Color,
     pub on_primary: Color,
-    /// Soft blueberry: icon tiles, tonal buttons, the waiting pill.
+    /// Soft lagoon: icon tiles, tonal buttons, the waiting pill.
     pub accent_soft: Color,
     pub accent_pressed_soft: Color,
     pub on_accent_soft: Color,
-    /// Peach: small cheerful details (heart, cheeks, offline phone tiles).
-    pub peach: Color,
-    pub peach_soft: Color,
-    pub on_peach_soft: Color,
+    /// Sun yellow: small cheerful details (heart, cheeks, offline phone tiles).
+    pub sun: Color,
+    pub sun_soft: Color,
+    pub on_sun_soft: Color,
     /// Connection card, its text, and the smiling devices drawn on it.
     pub hero: Color,
     pub on_hero: Color,
@@ -70,54 +71,54 @@ const fn hex(rgb: u32) -> Color {
 }
 
 pub const LIGHT: Palette = Palette {
-    ground: hex(0xF8F7FD),
+    ground: hex(0xF4F9FA),
     surface: Color::WHITE,
-    line: hex(0xE9E8F4),
-    divider: hex(0xEDECF6),
-    ink: hex(0x1D1B39),
-    muted: hex(0x57557A),
-    primary: hex(0x5653D0),
-    primary_hover: hex(0x4744BC),
+    line: hex(0xE0ECEF),
+    divider: hex(0xE6F0F2),
+    ink: hex(0x0E2A33),
+    muted: hex(0x47626A),
+    primary: hex(0x1B6E85),
+    primary_hover: hex(0x155A6D),
     on_primary: Color::WHITE,
-    accent_soft: hex(0xE5E4FB),
-    accent_pressed_soft: hex(0xD6D4F6),
-    on_accent_soft: hex(0x24206B),
-    peach: hex(0xFF9F6E),
-    peach_soft: hex(0xFFE8DA),
-    on_peach_soft: hex(0x7A3410),
-    hero: hex(0xE5E4FB),
-    on_hero: hex(0x24206B),
+    accent_soft: hex(0xD3ECF3),
+    accent_pressed_soft: hex(0xC2E2EB),
+    on_accent_soft: hex(0x073B49),
+    sun: hex(0xF5B71E),
+    sun_soft: hex(0xFFF1C7),
+    on_sun_soft: hex(0x6A4A00),
+    hero: hex(0xD3ECF3),
+    on_hero: hex(0x073B49),
     hero_device: Color::WHITE,
     success: hex(0x1E9B5C),
     success_text: hex(0x17663F),
-    offline: hex(0x7D7B9C),
+    offline: hex(0x7A8F95),
     danger: hex(0x9A2E24),
     danger_soft: hex(0xFBEDEB),
 };
 
-/// Dark: Android's neutral dark grays, blueberry only as an accent.
+/// Dark: Android's neutral dark grays, lagoon only as an accent.
 pub const DARK: Palette = Palette {
-    ground: hex(0x1C1B1F),
-    surface: hex(0x2B2930),
-    line: hex(0x3A3840),
-    divider: hex(0x3A3840),
-    ink: hex(0xE6E1E5),
-    muted: hex(0xCAC4D0),
-    primary: hex(0xBDBBFF),
-    primary_hover: hex(0xCFCDFF),
-    on_primary: hex(0x23206A),
-    accent_soft: hex(0x3B3870),
-    accent_pressed_soft: hex(0x46437F),
-    on_accent_soft: hex(0xE4E3FF),
-    peach: hex(0xFFB794),
-    peach_soft: hex(0x5A3424),
-    on_peach_soft: hex(0xFFDCCB),
-    hero: hex(0x2B2930),
-    on_hero: hex(0xE6E1E5),
-    hero_device: hex(0x3E3C45),
+    ground: hex(0x191C1D),
+    surface: hex(0x262A2C),
+    line: hex(0x353A3C),
+    divider: hex(0x353A3C),
+    ink: hex(0xE1E3E3),
+    muted: hex(0xBFC8CA),
+    primary: hex(0x7FD0E6),
+    primary_hover: hex(0x99DCEE),
+    on_primary: hex(0x003543),
+    accent_soft: hex(0x1F4B57),
+    accent_pressed_soft: hex(0x285B68),
+    on_accent_soft: hex(0xCDEFF8),
+    sun: hex(0xFFD25E),
+    sun_soft: hex(0x4F3D0A),
+    on_sun_soft: hex(0xFFEDB8),
+    hero: hex(0x262A2C),
+    on_hero: hex(0xE1E3E3),
+    hero_device: hex(0x353B3E),
     success: hex(0x6FDBA0),
     success_text: hex(0x9BE8BD),
-    offline: hex(0x938F99),
+    offline: hex(0x899295),
     danger: hex(0xFF9A8E),
     danger_soft: hex(0x43262A),
 };
@@ -169,8 +170,8 @@ pub mod icons {
         r#"<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>"#
     );
 
-    /// Rohy logo "La corde": a soft rope linking two points, on a blueberry rounded square (in color).
-    pub const LOGO: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="28" fill="#5653D0"/><path d="M27 67 C 27 36, 50 32, 50 50 C 50 68, 73 64, 73 33" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/><circle cx="27" cy="69" r="9" fill="#FF9F6E"/><circle cx="73" cy="31" r="9" fill="#FF9F6E"/></svg>"##;
+    /// Rohy logo "La corde": a soft rope linking two points, on a lagoon rounded square (in color).
+    pub const LOGO: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="28" fill="#1B6E85"/><path d="M27 67 C 27 36, 50 32, 50 50 C 50 68, 73 64, 73 33" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/><circle cx="27" cy="69" r="9" fill="#F5B71E"/><circle cx="73" cy="31" r="9" fill="#F5B71E"/></svg>"##;
 }
 
 fn icon<'a, M: 'a>(bytes: &'static [u8], size: f32, pick: Pick) -> Element<'a, M> {
@@ -285,7 +286,7 @@ fn primary(theme: &Theme, status: button::Status) -> button::Style {
     }
 }
 
-/// Tonal button (soft blueberry), as on the board.
+/// Tonal button (soft lagoon), as on the board.
 fn secondary(theme: &Theme, status: button::Status) -> button::Style {
     let p = palette(theme);
     let background = match status {
@@ -655,9 +656,9 @@ impl<M> canvas::Program<M> for Duo {
             b.bezier_curve_to(at(167.0, 31.0), at(161.0, 35.0), at(154.0, 40.0));
             b.close();
         });
-        frame.fill(&heart, p.peach);
+        frame.fill(&heart, p.sun);
 
-        let cheek = p.peach.scale_alpha(0.7);
+        let cheek = p.sun.scale_alpha(0.7);
         // Phone.
         frame.fill(&rounded(44.0, 16.0, 54.0, 86.0, 15.0), p.hero_device);
         frame.fill(&rounded(62.0, 22.0, 18.0, 4.0, 2.0), p.line);
@@ -697,8 +698,8 @@ fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a,
         )
     } else {
         (
-            |p| p.peach_soft,
-            |p| p.on_peach_soft,
+            |p| p.sun_soft,
+            |p| p.on_sun_soft,
             |p| p.muted,
             dot(7.0, |p| p.offline, true),
         )

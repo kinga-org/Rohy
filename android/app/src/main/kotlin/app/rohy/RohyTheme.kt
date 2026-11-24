@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/** Colors of the design board "Rohy Android — refonte" (palette Myrtille & Pêche), one set per appearance. */
+/** Colors of the design board "Rohy Android — refonte" (palette Lagon & Soleil), one set per appearance. */
 data class RohyColors(
     val ground: Color,
     val surface: Color,
@@ -27,13 +27,13 @@ data class RohyColors(
     val primary: Color,
     val onPrimary: Color,
     val accentText: Color,
-    /** Soft blueberry: icon tiles, the connection card. */
+    /** Soft lagoon: icon tiles, tonal buttons. */
     val accentSoft: Color,
     val onAccentSoft: Color,
-    /** Peach, for small cheerful details (heart, cheeks, some icon tiles). */
-    val peach: Color,
-    val peachSoft: Color,
-    val onPeachSoft: Color,
+    /** Sun yellow, for small cheerful details (heart, cheeks, some icon tiles). */
+    val sun: Color,
+    val sunSoft: Color,
+    val onSunSoft: Color,
     val neutralSoft: Color,
     /** Connection card on the home screen, its text, and the smiling devices drawn on it. */
     val heroCard: Color,
@@ -51,75 +51,75 @@ data class RohyColors(
     val disabledText: Color,
 )
 
-/** Blueberry of the app icon: the same in both appearances. */
-val Brand = Color(0xFF5653D0)
+/** Lagoon of the app icon ("La corde"): the same in both appearances. */
+val Brand = Color(0xFF1B6E85)
 
-/** Peach of the clipboard clip in the app icon. */
-val BrandPeach = Color(0xFFFF9F6E)
+/** Sun yellow of the rope's ends in the app icon. */
+val BrandSun = Color(0xFFF5B71E)
 
 val LightColors = RohyColors(
-    ground = Color(0xFFF8F7FD),
+    ground = Color(0xFFF4F9FA),
     surface = Color.White,
-    line = Color(0xFFE9E8F4),
-    divider = Color(0xFFEDECF6),
-    controlLine = Color(0xFFD3D1EC),
-    ink = Color(0xFF1D1B39),
-    muted = Color(0xFF57557A),
+    line = Color(0xFFE0ECEF),
+    divider = Color(0xFFE6F0F2),
+    controlLine = Color(0xFFC7DADF),
+    ink = Color(0xFF0E2A33),
+    muted = Color(0xFF47626A),
     primary = Brand,
     onPrimary = Color.White,
-    accentText = Color(0xFF4643B8),
-    accentSoft = Color(0xFFE5E4FB),
-    onAccentSoft = Color(0xFF24206B),
-    peach = BrandPeach,
-    peachSoft = Color(0xFFFFE8DA),
-    onPeachSoft = Color(0xFF7A3410),
-    neutralSoft = Color(0xFFEEEDF6),
-    heroCard = Color(0xFFE5E4FB),
-    onHeroCard = Color(0xFF24206B),
+    accentText = Color(0xFF155A6D),
+    accentSoft = Color(0xFFD3ECF3),
+    onAccentSoft = Color(0xFF073B49),
+    sun = BrandSun,
+    sunSoft = Color(0xFFFFF1C7),
+    onSunSoft = Color(0xFF6A4A00),
+    neutralSoft = Color(0xFFE9F0F2),
+    heroCard = Color(0xFFD3ECF3),
+    onHeroCard = Color(0xFF073B49),
     heroDevice = Color.White,
     success = Color(0xFF1E9B5C),
     successText = Color(0xFF17663F),
     successSoft = Color(0xFFE3F3EA),
-    offline = Color(0xFF7D7B9C),
+    offline = Color(0xFF7A8F95),
     warning = Color(0xFF8A4500),
     warningText = Color(0xFF6B3600),
     warningSoft = Color(0xFFFFE9D1),
     danger = Color(0xFF9A2E24),
-    disabled = Color(0xFFE2E1EE),
-    disabledText = Color(0xFF57557A),
+    disabled = Color(0xFFDCE7EA),
+    disabledText = Color(0xFF47626A),
 )
 
-/** Dark appearance: Android's own neutral dark grays (owner's request), blueberry only for accents. */
+/** Dark appearance: Android's own neutral dark grays (owner's request), lagoon only for accents. */
 val DarkColors = RohyColors(
-    ground = Color(0xFF1C1B1F),
-    surface = Color(0xFF2B2930),
-    line = Color(0xFF3A3840),
-    divider = Color(0xFF3A3840),
-    controlLine = Color(0xFF4A4850),
-    ink = Color(0xFFE6E1E5),
-    muted = Color(0xFFCAC4D0),
-    primary = Color(0xFFBDBBFF),
-    onPrimary = Color(0xFF23206A),
-    accentText = Color(0xFFCFCDFF),
-    accentSoft = Color(0xFF3B3870),
-    onAccentSoft = Color(0xFFE4E3FF),
-    peach = Color(0xFFFFB794),
-    peachSoft = Color(0xFF5A3424),
-    onPeachSoft = Color(0xFFFFDCCB),
-    neutralSoft = Color(0xFF36343B),
-    heroCard = Color(0xFF2B2930),
-    onHeroCard = Color(0xFFE6E1E5),
-    heroDevice = Color(0xFF3E3C45),
+    ground = Color(0xFF191C1D),
+    surface = Color(0xFF262A2C),
+    line = Color(0xFF353A3C),
+    divider = Color(0xFF353A3C),
+    controlLine = Color(0xFF454B4E),
+    ink = Color(0xFFE1E3E3),
+    muted = Color(0xFFBFC8CA),
+    primary = Color(0xFF7FD0E6),
+    onPrimary = Color(0xFF003543),
+    accentText = Color(0xFFA6E0EF),
+    accentSoft = Color(0xFF1F4B57),
+    onAccentSoft = Color(0xFFCDEFF8),
+    sun = Color(0xFFFFD25E),
+    sunSoft = Color(0xFF4F3D0A),
+    onSunSoft = Color(0xFFFFEDB8),
+    neutralSoft = Color(0xFF2F3436),
+    heroCard = Color(0xFF262A2C),
+    onHeroCard = Color(0xFFE1E3E3),
+    heroDevice = Color(0xFF353B3E),
     success = Color(0xFF6FDBA0),
     successText = Color(0xFF9BE8BD),
     successSoft = Color(0xFF233A2C),
-    offline = Color(0xFF938F99),
+    offline = Color(0xFF899295),
     warning = Color(0xFFF5B46E),
     warningText = Color(0xFFF5B46E),
     warningSoft = Color(0xFF43301A),
     danger = Color(0xFFFF9A8E),
-    disabled = Color(0xFF36343B),
-    disabledText = Color(0xFFCAC4D0),
+    disabled = Color(0xFF2F3436),
+    disabledText = Color(0xFFBFC8CA),
 )
 
 val Inter = FontFamily(
