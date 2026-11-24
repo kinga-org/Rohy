@@ -1,13 +1,17 @@
-//! Look of the desktop windows, from the design board "Rohy bureau — refonte":
-//! light and dark palettes, Inter font, stroke icons, widget styles and the two window layouts.
+//! Look of the desktop windows, from the design board "Rohy bureau — refonte" (row "Identité Myrtille &
+//! Pêche", same identity as the Android app): light and dark palettes, Inter font, stroke icons, widget styles and the two window layouts.
 //!
 //! Colors are picked at draw time from the iced theme, so the windows follow the appearance
 //! chosen in the tray menu, or the system mode, without being rebuilt.
 
+use iced::widget::canvas::{self, LineCap, LineDash, Path, Stroke};
 use iced::widget::{
     button, column, container, image, row, rule, scrollable, space, stack, svg, text,
 };
-use iced::{Alignment, Background, Border, Color, Element, Font, Length, Theme, font};
+use iced::{
+    Alignment, Background, Border, Color, Element, Font, Length, Point, Rectangle, Renderer, Size,
+    Theme, border, font, mouse,
+};
 
 use crate::state::{DeviceRow, Header};
 
@@ -30,25 +34,30 @@ const fn weight(weight: font::Weight) -> Font {
 /// Window content size on the board.
 pub const WINDOW: (f32, f32) = (440.0, 640.0);
 
-/// Colors of one appearance.
+/// Colors of one appearance (palette Myrtille & Pêche).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Palette {
     pub ground: Color,
     pub surface: Color,
     pub line: Color,
     pub divider: Color,
-    pub control_line: Color,
     pub ink: Color,
     pub muted: Color,
-    /// Rohy mark disc.
-    pub logo: Color,
     pub primary: Color,
     pub primary_hover: Color,
-    /// Accent used for text and icons on the ground or on `accent_soft`.
-    pub accent_text: Color,
+    pub on_primary: Color,
+    /// Soft blueberry: icon tiles, tonal buttons, the waiting pill.
     pub accent_soft: Color,
     pub accent_pressed_soft: Color,
-    pub neutral_soft: Color,
+    pub on_accent_soft: Color,
+    /// Peach: small cheerful details (heart, cheeks, offline phone tiles).
+    pub peach: Color,
+    pub peach_soft: Color,
+    pub on_peach_soft: Color,
+    /// Connection card, its text, and the smiling devices drawn on it.
+    pub hero: Color,
+    pub on_hero: Color,
+    pub hero_device: Color,
     pub success: Color,
     pub success_text: Color,
     pub offline: Color,
@@ -60,53 +69,57 @@ const fn hex(rgb: u32) -> Color {
     Color::from_rgb8((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
 }
 
-/// Brand teal: the connection banner keeps it in both appearances.
-const BRAND: Color = hex(0x1B4B5A);
-const ON_BRAND_LABEL: Color = hex(0xCFE3E8);
-const ON_BRAND_BODY: Color = hex(0xE3EEF1);
-
 pub const LIGHT: Palette = Palette {
-    ground: hex(0xF4F7F7),
+    ground: hex(0xF8F7FD),
     surface: Color::WHITE,
-    line: hex(0xDCE4E6),
-    divider: hex(0xE6ECEE),
-    control_line: hex(0xC5D2D5),
-    ink: hex(0x12262C),
-    muted: hex(0x4F6369),
-    logo: BRAND,
-    primary: BRAND,
-    primary_hover: hex(0x123540),
-    accent_text: BRAND,
-    accent_soft: hex(0xE8F0F2),
-    accent_pressed_soft: hex(0xDAE7EA),
-    neutral_soft: hex(0xEEF1F2),
-    success: hex(0x1E8A55),
-    success_text: hex(0x1E6B45),
-    offline: hex(0x7A8C91),
-    danger: hex(0xA1352B),
+    line: hex(0xE9E8F4),
+    divider: hex(0xEDECF6),
+    ink: hex(0x1D1B39),
+    muted: hex(0x57557A),
+    primary: hex(0x5653D0),
+    primary_hover: hex(0x4744BC),
+    on_primary: Color::WHITE,
+    accent_soft: hex(0xE5E4FB),
+    accent_pressed_soft: hex(0xD6D4F6),
+    on_accent_soft: hex(0x24206B),
+    peach: hex(0xFF9F6E),
+    peach_soft: hex(0xFFE8DA),
+    on_peach_soft: hex(0x7A3410),
+    hero: hex(0xE5E4FB),
+    on_hero: hex(0x24206B),
+    hero_device: Color::WHITE,
+    success: hex(0x1E9B5C),
+    success_text: hex(0x17663F),
+    offline: hex(0x7D7B9C),
+    danger: hex(0x9A2E24),
     danger_soft: hex(0xFBEDEB),
 };
 
+/// Dark: Android's neutral dark grays, blueberry only as an accent.
 pub const DARK: Palette = Palette {
-    ground: hex(0x0F1A1D),
-    surface: hex(0x172429),
-    line: hex(0x26363B),
-    divider: hex(0x223136),
-    control_line: hex(0x34474D),
-    ink: hex(0xE6EEF0),
-    muted: hex(0x9AAEB3),
-    logo: hex(0x2A6B7E),
-    primary: hex(0x2A6B7E),
-    primary_hover: hex(0x33809A),
-    accent_text: hex(0x8CC7D6),
-    accent_soft: hex(0x1E3A42),
-    accent_pressed_soft: hex(0x24464F),
-    neutral_soft: hex(0x213035),
-    success: hex(0x3CB97A),
-    success_text: hex(0x6FD39F),
-    offline: hex(0x6F858B),
-    danger: hex(0xF08A7E),
-    danger_soft: hex(0x3A2220),
+    ground: hex(0x1C1B1F),
+    surface: hex(0x2B2930),
+    line: hex(0x3A3840),
+    divider: hex(0x3A3840),
+    ink: hex(0xE6E1E5),
+    muted: hex(0xCAC4D0),
+    primary: hex(0xBDBBFF),
+    primary_hover: hex(0xCFCDFF),
+    on_primary: hex(0x23206A),
+    accent_soft: hex(0x3B3870),
+    accent_pressed_soft: hex(0x46437F),
+    on_accent_soft: hex(0xE4E3FF),
+    peach: hex(0xFFB794),
+    peach_soft: hex(0x5A3424),
+    on_peach_soft: hex(0xFFDCCB),
+    hero: hex(0x2B2930),
+    on_hero: hex(0xE6E1E5),
+    hero_device: hex(0x3E3C45),
+    success: hex(0x6FDBA0),
+    success_text: hex(0x9BE8BD),
+    offline: hex(0x938F99),
+    danger: hex(0xFF9A8E),
+    danger_soft: hex(0x43262A),
 };
 
 /// Palette matching the theme iced resolved for the window.
@@ -120,10 +133,6 @@ pub fn palette(theme: &Theme) -> &'static Palette {
 
 /// Chooses one color of the current palette.
 type Pick = fn(&Palette) -> Color;
-
-fn white(_: &Palette) -> Color {
-    Color::WHITE
-}
 
 fn tint(pick: Pick) -> impl Fn(&Theme) -> text::Style {
     move |theme| text::Style {
@@ -156,15 +165,12 @@ pub mod icons {
     );
     pub const PLUS: &[u8] =
         stroke!(r#"<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>"#);
-    pub const LINK: &[u8] = stroke!(
-        r#"<path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/>"#
-    );
     pub const RECEIVED: &[u8] = stroke!(
         r#"<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>"#
     );
 
-    /// The two links of the Rohy mark, drawn over its disc (40 × 40).
-    pub const MARK: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="black" stroke-width="2.4"><rect x="7.2" y="15.6" width="13.6" height="8.8" rx="4.4"/><rect x="19.2" y="15.6" width="13.6" height="8.8" rx="4.4"/></svg>"#;
+    /// Rohy logo "Le presse-papiers": a smiling clipboard on a blueberry rounded square (in color).
+    pub const LOGO: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="28" fill="#5653D0"/><rect x="27" y="27" width="46" height="54" rx="14" fill="#FFFFFF"/><rect x="39" y="20" width="22" height="13" rx="6.5" fill="#FF9F6E"/><circle cx="42" cy="51" r="3.2" fill="#5653D0"/><circle cx="58" cy="51" r="3.2" fill="#5653D0"/><path d="M43 61 q7 6 14 0" fill="none" stroke="#5653D0" stroke-width="2.8" stroke-linecap="round"/><ellipse cx="35" cy="59" rx="3.4" ry="2.2" fill="#FF9F6E"/><ellipse cx="65" cy="59" rx="3.4" ry="2.2" fill="#FF9F6E"/></svg>"##;
 }
 
 fn icon<'a, M: 'a>(bytes: &'static [u8], size: f32, pick: Pick) -> Element<'a, M> {
@@ -177,11 +183,11 @@ fn icon<'a, M: 'a>(bytes: &'static [u8], size: f32, pick: Pick) -> Element<'a, M
         .into()
 }
 
-/// Rohy mark: white links on a disc of the `disc` color.
-fn logo<'a, M: 'a>(size: f32, disc: Pick) -> Element<'a, M> {
-    container(icon(icons::MARK, size, white))
-        .center(size)
-        .style(filled(disc, size / 2.0))
+/// Rohy logo in its own colors, the same in both appearances.
+fn logo<'a, M: 'a>(size: f32) -> Element<'a, M> {
+    svg(svg::Handle::from_memory(icons::LOGO))
+        .width(size)
+        .height(size)
         .into()
 }
 
@@ -200,16 +206,37 @@ fn card(theme: &Theme) -> container::Style {
     let p = palette(theme);
     container::Style {
         background: Some(p.surface.into()),
-        border: Border::default().rounded(16).width(1).color(p.line),
+        border: Border::default().rounded(24),
         ..container::Style::default()
     }
 }
 
-fn banner(_: &Theme) -> container::Style {
+fn banner(theme: &Theme) -> container::Style {
+    let p = palette(theme);
     container::Style {
-        text_color: Some(Color::WHITE),
-        background: Some(BRAND.into()),
-        border: Border::default().rounded(16),
+        text_color: Some(p.on_hero),
+        background: Some(p.hero.into()),
+        border: Border::default().rounded(28),
+        ..container::Style::default()
+    }
+}
+
+/// One row of a grouped list (Material 3 Expressive): the ends are rounder than the joints.
+fn grouped(index: usize, count: usize) -> impl Fn(&Theme) -> container::Style {
+    let (outer, inner) = (22.0, 6.0);
+    let top = if index == 0 { outer } else { inner };
+    let bottom = if index + 1 == count { outer } else { inner };
+    move |theme| container::Style {
+        background: Some(palette(theme).surface.into()),
+        border: Border {
+            radius: border::Radius {
+                top_left: top,
+                top_right: top,
+                bottom_right: bottom,
+                bottom_left: bottom,
+            },
+            ..Border::default()
+        },
         ..container::Style::default()
     }
 }
@@ -252,23 +279,23 @@ fn primary(theme: &Theme, status: button::Status) -> button::Style {
     };
     button::Style {
         background: Some(Background::Color(background)),
-        text_color: Color::WHITE,
-        border: Border::default().rounded(10),
+        text_color: p.on_primary,
+        border: Border::default().rounded(999),
         ..button::Style::default()
     }
 }
 
+/// Tonal button (soft blueberry), as on the board.
 fn secondary(theme: &Theme, status: button::Status) -> button::Style {
     let p = palette(theme);
     let background = match status {
-        button::Status::Active | button::Status::Disabled => p.surface,
-        button::Status::Hovered => p.accent_soft,
-        button::Status::Pressed => p.accent_pressed_soft,
+        button::Status::Active | button::Status::Disabled => p.accent_soft,
+        button::Status::Hovered | button::Status::Pressed => p.accent_pressed_soft,
     };
     button::Style {
         background: Some(Background::Color(background)),
-        text_color: p.ink,
-        border: Border::default().rounded(10).width(1).color(p.control_line),
+        text_color: p.on_accent_soft,
+        border: Border::default().rounded(999),
         ..button::Style::default()
     }
 }
@@ -282,12 +309,12 @@ fn quiet_danger(theme: &Theme, status: button::Status) -> button::Style {
     button::Style {
         background,
         text_color: p.danger,
-        border: Border::default().rounded(8),
+        border: Border::default().rounded(999),
         ..button::Style::default()
     }
 }
 
-/// Full-width 44 px button: icon and label centered.
+/// Full-width 48 px pill button: icon and label centered.
 fn wide_button<'a, M: Clone + 'a>(
     glyph: &'static [u8],
     label: &'a str,
@@ -297,13 +324,13 @@ fn wide_button<'a, M: Clone + 'a>(
 ) -> Element<'a, M> {
     let content = row![
         icon(glyph, 18.0, glyph_color),
-        text(label).size(14).font(SEMIBOLD)
+        text(label).size(15).font(SEMIBOLD)
     ]
     .spacing(8)
     .align_y(Alignment::Center);
     button(container(content).center(Length::Fill))
         .width(Length::Fill)
-        .height(44)
+        .height(48)
         .padding(0)
         .style(style)
         .on_press(on_press)
@@ -321,7 +348,7 @@ fn dot<'a, M: 'a>(size: f32, pick: Pick, hollow: bool) -> Element<'a, M> {
 
 fn window_page<'a, M: 'a>(content: impl Into<Element<'a, M>>) -> Element<'a, M> {
     container(content)
-        .padding(28)
+        .padding(24)
         .width(Length::Fill)
         .height(Length::Fill)
         .style(page)
@@ -335,7 +362,7 @@ pub fn pairing<'a, M: Clone + 'a>(
     on_copy: M,
 ) -> Element<'a, M> {
     let heading = row![
-        logo(40.0, |p| p.logo),
+        logo(44.0),
         column![
             text("Associer un téléphone").size(20).font(BOLD),
             text("Ouvre Rohy sur ton téléphone, puis scanne ce code.")
@@ -352,9 +379,9 @@ pub fn pairing<'a, M: Clone + 'a>(
         Some(handle) => stack![
             image(handle).width(232).height(232),
             container(
-                container(logo(36.0, |_| BRAND))
+                container(logo(40.0))
                     .padding(4)
-                    .style(filled(white, 12.0))
+                    .style(filled(|_| Color::WHITE, 13.0))
             )
             .center(232),
         ]
@@ -369,11 +396,11 @@ pub fn pairing<'a, M: Clone + 'a>(
     };
     let waiting = container(
         row![
-            dot(8.0, |p| p.accent_text, false),
+            dot(8.0, |p| p.primary, false),
             text("En attente du scan…")
                 .size(13)
                 .font(MEDIUM)
-                .style(tint(|p| p.accent_text)),
+                .style(tint(|p| p.on_accent_soft)),
         ]
         .spacing(10)
         .align_y(Alignment::Center),
@@ -404,7 +431,7 @@ pub fn pairing<'a, M: Clone + 'a>(
         (icons::COPY, "Copier le code d'association")
     };
     let copy = column![
-        wide_button(glyph, label, |p| p.ink, secondary, on_copy),
+        wide_button(glyph, label, |p| p.on_accent_soft, secondary, on_copy),
         text("Colle-le ensuite dans l'app Rohy du téléphone.")
             .size(12)
             .style(tint(|p| p.muted))
@@ -449,26 +476,24 @@ pub fn devices<'a, M: Clone + 'a>(
     let body: Element<'a, M> = if rows.is_empty() {
         empty_state()
     } else {
-        let mut list = column![];
+        let mut list = column![].spacing(3);
         let count = rows.len();
         for (index, device) in rows.into_iter().enumerate() {
             let forget = on_forget(device.id.clone());
-            list = list.push(device_row(device, forget));
-            if index + 1 < count {
-                list = list.push(
-                    container(rule::horizontal(1).style(line(|p| p.divider))).padding([0, 16]),
-                );
-            }
+            list = list.push(container(device_row(device, forget)).style(grouped(index, count)));
         }
         column![
-            text("TÉLÉPHONES ASSOCIÉS")
-                .size(13)
-                .font(SEMIBOLD)
-                .style(tint(|p| p.muted)),
-            container(scrollable(list)).style(card),
+            container(
+                text("Téléphones associés")
+                    .size(13)
+                    .font(SEMIBOLD)
+                    .style(tint(|p| p.muted))
+            )
+            .padding([0, 8]),
+            scrollable(list),
             space().height(Length::Fill),
         ]
-        .spacing(10)
+        .spacing(8)
         .height(Length::Fill)
         .into()
     };
@@ -477,7 +502,7 @@ pub fn devices<'a, M: Clone + 'a>(
         wide_button(
             icons::PLUS,
             "Associer un téléphone",
-            white,
+            |p| p.on_primary,
             primary,
             on_pair
         ),
@@ -498,7 +523,7 @@ pub fn devices<'a, M: Clone + 'a>(
         );
     }
 
-    window_page(column![header_view(header), body, bottom].spacing(20))
+    window_page(column![header_view(header), body, bottom].spacing(18))
 }
 
 fn header_view<'a, M: 'a>(header: Header) -> Element<'a, M> {
@@ -539,59 +564,141 @@ fn header_view<'a, M: 'a>(header: Header) -> Element<'a, M> {
 }
 
 fn connected_banner<'a, M: 'a>(names: String, activity: Option<String>) -> Element<'a, M> {
-    let badge = container(icon(icons::LINK, 22.0, white))
-        .center(40)
-        .style(filled(|_| Color::WHITE.scale_alpha(0.14), 20.0));
-    let mut content = column![
+    let pill = container(
         row![
-            badge,
-            column![
-                text("SYNCHRONISATION ACTIVE")
-                    .size(12)
-                    .font(MEDIUM)
-                    .color(ON_BRAND_LABEL),
-                text(format!("Connecté à {names}"))
-                    .size(19)
-                    .font(BOLD)
-                    .color(Color::WHITE),
-            ]
-            .spacing(2),
+            dot(8.0, |p| p.success, false),
+            text("Synchronisation active")
+                .size(12)
+                .font(SEMIBOLD)
+                .style(tint(|p| p.success_text)),
         ]
-        .spacing(12)
-        .align_y(Alignment::Center)
+        .spacing(6)
+        .align_y(Alignment::Center),
+    )
+    .padding([5, 12])
+    .style(filled(|p| p.hero_device, 999.0));
+    let mut title = column![
+        text(format!("Connecté à {names}"))
+            .size(21)
+            .font(BOLD)
+            .style(tint(|p| p.on_hero))
     ]
-    .spacing(12);
+    .spacing(3);
     if let Some(activity) = activity {
-        content = content
-            .push(rule::horizontal(1).style(line(|_| Color::WHITE.scale_alpha(0.16))))
-            .push(
-                row![
-                    icon(icons::RECEIVED, 16.0, |_| ON_BRAND_BODY),
-                    text(activity).size(13).color(ON_BRAND_BODY),
-                ]
-                .spacing(8)
-                .align_y(Alignment::Center),
-            );
+        title = title.push(
+            row![
+                icon(icons::RECEIVED, 15.0, |p| p.on_hero),
+                text(activity).size(13).style(tint(|p| p.on_hero)),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center),
+        );
     }
-    container(content)
-        .padding(20)
+    container(column![container(duo()).center_x(Length::Fill), pill, title].spacing(10))
+        .padding([16, 20])
         .width(Length::Fill)
         .style(banner)
         .into()
+}
+
+/// The phone and the computer smiling at each other (board illustration, 318 × 110 frame).
+fn duo<'a, M: 'a>() -> Element<'a, M> {
+    canvas::Canvas::new(Duo).width(260).height(90).into()
+}
+
+struct Duo;
+
+impl<M> canvas::Program<M> for Duo {
+    type State = ();
+
+    fn draw(
+        &self,
+        _state: &(),
+        renderer: &Renderer,
+        theme: &Theme,
+        bounds: Rectangle,
+        _cursor: mouse::Cursor,
+    ) -> Vec<canvas::Geometry> {
+        let p = palette(theme);
+        let k = bounds.width / 318.0;
+        let at = |x: f32, y: f32| Point::new(x * k, y * k);
+        let rounded = |x: f32, y: f32, w: f32, h: f32, r: f32| {
+            Path::rounded_rectangle(at(x, y), Size::new(w * k, h * k), (r * k).into())
+        };
+        let dot = |x: f32, y: f32, r: f32| Path::circle(at(x, y), r * k);
+        let stroke = |color: Color, width: f32| Stroke {
+            width: width * k,
+            line_cap: LineCap::Round,
+            ..Stroke::default().with_color(color)
+        };
+        let mut frame = canvas::Frame::new(renderer, bounds.size());
+
+        let link = Path::new(|b| {
+            b.move_to(at(100.0, 62.0));
+            b.bezier_curve_to(at(134.0, 18.0), at(180.0, 18.0), at(208.0, 54.0));
+        });
+        frame.stroke(
+            &link,
+            Stroke {
+                line_dash: LineDash {
+                    segments: &[k, 10.0 * k],
+                    offset: 0,
+                },
+                ..stroke(p.primary, 4.0)
+            },
+        );
+        let heart = Path::new(|b| {
+            b.move_to(at(154.0, 40.0));
+            b.bezier_curve_to(at(147.0, 35.0), at(141.0, 31.0), at(141.0, 25.0));
+            b.bezier_curve_to(at(141.0, 18.0), at(152.0, 16.0), at(154.0, 23.0));
+            b.bezier_curve_to(at(156.0, 16.0), at(167.0, 18.0), at(167.0, 25.0));
+            b.bezier_curve_to(at(167.0, 31.0), at(161.0, 35.0), at(154.0, 40.0));
+            b.close();
+        });
+        frame.fill(&heart, p.peach);
+
+        let cheek = p.peach.scale_alpha(0.7);
+        // Phone.
+        frame.fill(&rounded(44.0, 16.0, 54.0, 86.0, 15.0), p.hero_device);
+        frame.fill(&rounded(62.0, 22.0, 18.0, 4.0, 2.0), p.line);
+        frame.fill(&dot(62.0, 56.0, 3.6), p.ink);
+        frame.fill(&dot(80.0, 56.0, 3.6), p.ink);
+        let smile = Path::new(|b| {
+            b.move_to(at(64.0, 67.0));
+            b.quadratic_curve_to(at(71.0, 73.0), at(78.0, 67.0));
+        });
+        frame.stroke(&smile, stroke(p.ink, 2.8));
+        frame.fill(&rounded(51.0, 62.4, 8.0, 5.2, 2.6), cheek);
+        frame.fill(&rounded(83.0, 62.4, 8.0, 5.2, 2.6), cheek);
+        // Computer.
+        frame.fill(&rounded(196.0, 24.0, 94.0, 62.0, 13.0), p.hero_device);
+        frame.fill(&rounded(184.0, 88.0, 118.0, 12.0, 6.0), p.hero_device);
+        frame.fill(&dot(231.0, 50.0, 3.8), p.ink);
+        frame.fill(&dot(255.0, 50.0, 3.8), p.ink);
+        let smile = Path::new(|b| {
+            b.move_to(at(233.0, 62.0));
+            b.quadratic_curve_to(at(243.0, 70.0), at(253.0, 62.0));
+        });
+        frame.stroke(&smile, stroke(p.ink, 2.8));
+        frame.fill(&rounded(215.6, 57.2, 8.8, 5.6, 2.8), cheek);
+        frame.fill(&rounded(261.6, 57.2, 8.8, 5.6, 2.8), cheek);
+
+        vec![frame.into_geometry()]
+    }
 }
 
 fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a, M> {
     let (tile, glyph, status, marker): (Pick, Pick, Pick, _) = if device.connected {
         (
             |p| p.accent_soft,
-            |p| p.accent_text,
+            |p| p.on_accent_soft,
             |p| p.success_text,
             dot(7.0, |p| p.success, false),
         )
     } else {
         (
-            |p| p.neutral_soft,
-            |p| p.muted,
+            |p| p.peach_soft,
+            |p| p.on_peach_soft,
             |p| p.muted,
             dot(7.0, |p| p.offline, true),
         )
@@ -599,7 +706,7 @@ fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a,
     row![
         container(icon(icons::PHONE, 20.0, glyph))
             .center(40)
-            .style(filled(tile, 10.0)),
+            .style(filled(tile, 14.0)),
         column![
             text(device.name).size(15).font(SEMIBOLD),
             row![marker, text(device.detail).size(12).style(tint(status))]
@@ -608,7 +715,7 @@ fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a,
         ]
         .spacing(3)
         .width(Length::Fill),
-        button(container(text("Oublier").size(13).font(MEDIUM)).center_y(Length::Fill))
+        button(container(text("Oublier").size(13).font(SEMIBOLD)).center_y(Length::Fill))
             .height(36)
             .padding([0, 12])
             .style(quiet_danger)
@@ -616,16 +723,16 @@ fn device_row<'a, M: Clone + 'a>(device: DeviceRow, on_forget: M) -> Element<'a,
     ]
     .spacing(12)
     .align_y(Alignment::Center)
-    .padding([14, 16])
+    .padding([12, 14])
     .into()
 }
 
 fn empty_state<'a, M: 'a>() -> Element<'a, M> {
     container(
         column![
-            container(icon(icons::PHONE, 40.0, |p| p.accent_text))
+            container(icon(icons::PHONE, 40.0, |p| p.on_accent_soft))
                 .center(88)
-                .style(filled(|p| p.accent_soft, 44.0)),
+                .style(filled(|p| p.accent_soft, 30.0)),
             text("Aucun téléphone associé").size(18).font(BOLD),
             text("Associe ton téléphone Android pour copier d'un côté et coller de l'autre.")
                 .size(14)
@@ -706,8 +813,8 @@ mod tests {
         ];
         for (theme, p) in [(Theme::Light, LIGHT), (Theme::Dark, DARK)] {
             for status in statuses {
-                assert_eq!(primary(&theme, status).text_color, Color::WHITE);
-                assert_eq!(secondary(&theme, status).text_color, p.ink);
+                assert_eq!(primary(&theme, status).text_color, p.on_primary);
+                assert_eq!(secondary(&theme, status).text_color, p.on_accent_soft);
                 assert_eq!(quiet_danger(&theme, status).text_color, p.danger);
             }
             assert_eq!(
@@ -719,8 +826,11 @@ mod tests {
                 None
             );
             assert_eq!(page(&theme).background, Some(p.ground.into()));
-            assert_eq!(card(&theme).border.color, p.line);
-            assert_eq!(banner(&theme).background, Some(BRAND.into()));
+            assert_eq!(card(&theme).background, Some(p.surface.into()));
+            assert_eq!(banner(&theme).background, Some(p.hero.into()));
+            let first = grouped(0, 2)(&theme).border.radius;
+            let last = grouped(1, 2)(&theme).border.radius;
+            assert!(first.top_left > first.bottom_left && last.bottom_left > last.top_left);
             assert_eq!(
                 ring(|p| p.offline, 5.0, 2.0)(&theme).border.color,
                 p.offline
@@ -820,9 +930,8 @@ mod tests {
             icons::LOCK,
             icons::PHONE,
             icons::PLUS,
-            icons::LINK,
             icons::RECEIVED,
-            icons::MARK,
+            icons::LOGO,
         ] {
             assert!(glyph.starts_with(b"<svg") && glyph.ends_with(b"</svg>"));
         }
