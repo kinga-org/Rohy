@@ -291,7 +291,7 @@ class SyncService : Service() {
         )
         val sendAction = Notification.Action.Builder(null, "Envoyer le presse-papiers", send).build()
         val builder = Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_link)
+            .setSmallIcon(R.drawable.ic_rohy)
             .setContentTitle("Rohy")
             .setContentText(status.label)
             .setContentIntent(open)
