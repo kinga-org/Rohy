@@ -39,39 +39,49 @@ const BLUEBERRY: [f32; 3] = [86.0, 83.0, 208.0];
 const PEACH: [f32; 3] = [255.0, 159.0, 110.0];
 const WHITE: [f32; 3] = [255.0, 255.0, 255.0];
 
-/// Color of the Rohy logo at `(u, v)` in its 100 × 100 frame (the board's "Le presse-papiers"), or
-/// `None` outside its rounded square.
-fn logo_color(u: f32, v: f32) -> Option<[f32; 3]> {
+/// Points along the rope "M27 67 C27 36, 50 32, 50 50 C50 68, 73 64, 73 33" (two cubic curves).
+fn rope_points() -> Vec<(f32, f32)> {
+    let cubic = |p: [(f32, f32); 4], t: f32| {
+        let m = 1.0 - t;
+        let (a, b, c, d) = (m * m * m, 3.0 * m * m * t, 3.0 * m * t * t, t * t * t);
+        (
+            a * p[0].0 + b * p[1].0 + c * p[2].0 + d * p[3].0,
+            a * p[0].1 + b * p[1].1 + c * p[2].1 + d * p[3].1,
+        )
+    };
+    let halves = [
+        [(27.0, 67.0), (27.0, 36.0), (50.0, 32.0), (50.0, 50.0)],
+        [(50.0, 50.0), (50.0, 68.0), (73.0, 64.0), (73.0, 33.0)],
+    ];
+    halves
+        .iter()
+        .flat_map(|half| (0..=64).map(move |i| cubic(*half, i as f32 / 64.0)))
+        .collect()
+}
+
+/// Color of the Rohy logo "La corde" at `(u, v)` in its 100 × 100 frame, or `None` outside its rounded
+/// square. `rope` holds points along the rope's center line.
+fn logo_color(u: f32, v: f32, rope: &[(f32, f32)]) -> Option<[f32; 3]> {
     if rounded_rect(u, v, (0.0, 0.0, 100.0, 100.0, 28.0)) > 0.0 {
         return None;
     }
-    let eye = |cx: f32| (u - cx).powi(2) + (v - 51.0).powi(2) <= 3.2f32.powi(2);
-    // Smile: the curve "M43 61 q7 6 14 0" is the parabola v = 61 + 3·(1 − ((u − 50) / 7)²), 2.8 wide.
-    let smile = (43.0..=57.0).contains(&u) && {
-        let t = (u - 50.0) / 7.0;
-        (v - (61.0 + 3.0 * (1.0 - t * t))).abs() <= 1.4
-    };
-    let cheek = |cx: f32| ((u - cx) / 3.4).powi(2) + ((v - 59.0) / 2.2).powi(2) <= 1.0;
-    Some(
-        if rounded_rect(u, v, (39.0, 20.0, 22.0, 13.0, 6.5)) <= 0.0 {
-            PEACH
-        } else if rounded_rect(u, v, (27.0, 27.0, 46.0, 54.0, 14.0)) <= 0.0 {
-            if eye(42.0) || eye(58.0) || smile {
-                BLUEBERRY
-            } else if cheek(35.0) || cheek(65.0) {
-                PEACH
-            } else {
-                WHITE
-            }
-        } else {
-            BLUEBERRY
-        },
-    )
+    let end = |cx: f32, cy: f32| (u - cx).powi(2) + (v - cy).powi(2) <= 81.0;
+    let on_rope = rope
+        .iter()
+        .any(|&(x, y)| (u - x).powi(2) + (v - y).powi(2) <= 25.0);
+    Some(if end(27.0, 69.0) || end(73.0, 31.0) {
+        PEACH
+    } else if on_rope {
+        WHITE
+    } else {
+        BLUEBERRY
+    })
 }
 
-/// Tray and window icon: the Rohy logo (smiling clipboard on blueberry), 4 × 4 supersampled.
+/// Tray and window icon: the Rohy logo (rope on blueberry), 4 × 4 supersampled.
 pub fn tray_icon_rgba(size: u32) -> Vec<u8> {
     const SAMPLES: u32 = 4;
+    let rope = rope_points();
     let mut pixels = vec![0u8; (size * size * 4) as usize];
     let step = 100.0 / (size * SAMPLES) as f32;
     for y in 0..size {
@@ -81,7 +91,7 @@ pub fn tray_icon_rgba(size: u32) -> Vec<u8> {
                 for sx in 0..SAMPLES {
                     let u = ((x * SAMPLES + sx) as f32 + 0.5) * step;
                     let v = ((y * SAMPLES + sy) as f32 + 0.5) * step;
-                    if let Some(color) = logo_color(u, v) {
+                    if let Some(color) = logo_color(u, v, &rope) {
                         for (total, channel) in sum.iter_mut().zip(color) {
                             *total += channel;
                         }
@@ -120,12 +130,12 @@ mod tests {
         let pixels = tray_icon_rgba(100);
         assert_eq!(pixels.len(), 100 * 100 * 4);
         let at = |x: usize, y: usize| &pixels[(y * 100 + x) * 4..(y * 100 + x) * 4 + 4];
-        // Rounded corner: transparent; side: blueberry; clipboard: white; clip: peach; eye: blueberry.
+        // Rounded corner: transparent; side: blueberry; rope middle: white; rope ends: peach.
         assert_eq!(at(0, 0)[3], 0);
         assert_eq!(at(5, 50), &[86, 83, 208, 255]);
-        assert_eq!(at(50, 40), &[255, 255, 255, 255]);
-        assert_eq!(at(50, 25), &[255, 159, 110, 255]);
-        assert_eq!(at(42, 51), &[86, 83, 208, 255]);
-        assert_eq!(at(50, 64), &[86, 83, 208, 255]);
+        assert_eq!(at(50, 50), &[255, 255, 255, 255]);
+        assert_eq!(at(27, 69), &[255, 159, 110, 255]);
+        assert_eq!(at(73, 31), &[255, 159, 110, 255]);
+        assert_eq!(at(70, 75), &[86, 83, 208, 255]);
     }
 }

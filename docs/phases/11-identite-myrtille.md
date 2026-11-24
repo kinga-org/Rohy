@@ -20,7 +20,8 @@ Pêche).
     surface et carte de connexion `#2B2930`, texte `#E6E1E5`, texte secondaire `#CAC4D0`, filets
     `#3A3840` ; la myrtille reste pour les accents : principale `#BDBBFF`, pastilles `#3B3870`,
     accent `#FFB794`, accent doux `#5A3424`.
-- Logo : presse-papiers blanc qui sourit, pince pêche, sur carré arrondi `#5653D0`. Icône de
+- Logo : d'abord « Le presse-papiers » (presse-papiers qui sourit) ; en essai depuis le 24 nov. : « La
+  corde » (corde blanche aux bouts pêche) sur carré arrondi `#5653D0`. Icône de
   notification : silhouette d'une seule couleur.
 - Formes : coins très arrondis (cartes 26–32 dp), bouton principal en pilule, listes groupées
   (premier et dernier élément plus arrondis), pastilles d'icône teintées (douce / accent doux).

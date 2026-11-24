@@ -169,8 +169,8 @@ pub mod icons {
         r#"<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>"#
     );
 
-    /// Rohy logo "Le presse-papiers": a smiling clipboard on a blueberry rounded square (in color).
-    pub const LOGO: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="28" fill="#5653D0"/><rect x="27" y="27" width="46" height="54" rx="14" fill="#FFFFFF"/><rect x="39" y="20" width="22" height="13" rx="6.5" fill="#FF9F6E"/><circle cx="42" cy="51" r="3.2" fill="#5653D0"/><circle cx="58" cy="51" r="3.2" fill="#5653D0"/><path d="M43 61 q7 6 14 0" fill="none" stroke="#5653D0" stroke-width="2.8" stroke-linecap="round"/><ellipse cx="35" cy="59" rx="3.4" ry="2.2" fill="#FF9F6E"/><ellipse cx="65" cy="59" rx="3.4" ry="2.2" fill="#FF9F6E"/></svg>"##;
+    /// Rohy logo "La corde": a soft rope linking two points, on a blueberry rounded square (in color).
+    pub const LOGO: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="28" fill="#5653D0"/><path d="M27 67 C 27 36, 50 32, 50 50 C 50 68, 73 64, 73 33" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/><circle cx="27" cy="69" r="9" fill="#FF9F6E"/><circle cx="73" cy="31" r="9" fill="#FF9F6E"/></svg>"##;
 }
 
 fn icon<'a, M: 'a>(bytes: &'static [u8], size: f32, pick: Pick) -> Element<'a, M> {
