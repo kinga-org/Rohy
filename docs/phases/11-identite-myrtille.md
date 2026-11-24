@@ -1,4 +1,4 @@
-# Phase 11 — Nouvelle identité « Myrtille & Pêche » (Android)
+# Phase 11 — Nouvelle identité « Myrtille & Pêche » (Android, Mac, Windows, Linux)
 
 **Statut :** en cours (démarrée le 2026-11-24)
 
@@ -34,7 +34,16 @@ Pêche).
   poignée : nouvelles couleurs et formes.
 - Onglet de la poignée d'envoi aux couleurs de la palette.
 
-Hors périmètre : icônes des apps Mac, Windows et Linux (à décider séparément).
+- Mac (maquette « Rohy macOS — natif », rangée « Identité Myrtille & Pêche — toujours natif ») :
+  composants natifs inchangés ; seulement l'icône de l'app, le symbole de la barre des menus (image
+  modèle, estompée sans téléphone connecté), la couleur d'accent de l'app (prise en compte quand
+  l'accent du système est « Multicolore ») et le logo au centre du QR code.
+- Windows et Linux (maquette « Rohy bureau — refonte », rangée « Identité Myrtille & Pêche ») : même
+  palette et mêmes formes qu'Android, carte « Connecté » avec l'illustration, logo dans l'en-tête, le
+  QR code, l'icône de la zone de notification et de la fenêtre.
+
+Hors périmètre : icône du fichier `Rohy.exe` dans l'Explorateur Windows (ressource à embarquer au
+build), à faire séparément.
 
 ## Dépendances
 Phase 10 (poignée d'envoi), dont l'écran et la ligne de réglage sont restylés ici.
@@ -45,6 +54,11 @@ Phase 10 (poignée d'envoi), dont l'écran et la ligne de réglage sont restylé
 - [x] Icône de l'app (adaptative, avec couche monochrome) et icône de notification / tuile
 - [x] Illustration de l'accueil (dessinée en Compose, couleurs du thème)
 - [x] Accueil, boutons, cartes, liste groupée « Envoyer plus vite », onglet de la poignée
+- [x] Mac : icône (catalogue d'assets compilé par `actool`), accent, symbole de la barre des menus,
+  logo du QR code
+- [x] Windows et Linux : palette, formes, illustration, logo, icône de la zone de notification et de
+  la fenêtre
+- [ ] Essais réels : Mac (menu et icône), Windows, Linux
 - [ ] Vérifier les autres écrans (appairage, injoignable, fiabilité, journal) face à la maquette
 - [ ] Captures sur le Samsung et le Huawei, comparées à la maquette
 
