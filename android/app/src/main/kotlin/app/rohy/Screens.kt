@@ -472,7 +472,7 @@ fun HandlePermissionScreen(onAllow: () -> Unit, onLater: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Envoie depuis n'importe quelle app, en un geste", style = RohyText.cardTitle, color = c.ink, modifier = Modifier.semantics { heading() })
             Text(
-                "Une fine barre discrète sur le bord de l'écran. Copie un texte, même dans un jeu, touche la barre puis « Envoyer » : il arrive sur ton ordinateur.",
+                "Une fine barre discrète sur le bord de l'écran. Copie un texte, même dans un jeu, glisse la barre vers le centre puis touche « Envoyer » : il arrive sur ton ordinateur.",
                 style = RohyText.body, color = c.muted,
             )
         }
@@ -510,8 +510,8 @@ private fun HandlePreview() {
             Text("4F7K-92QX", style = RohyText.cardTitle, color = Color.White)
         }
         Box(
-            Modifier.align(Alignment.TopEnd).padding(top = 36.dp, end = 5.dp).width(6.dp).height(48.dp).clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.6f)).border(1.dp, Color.Black.copy(alpha = 0.3f), CircleShape),
+            Modifier.align(Alignment.TopEnd).padding(top = 36.dp, end = 4.dp).width(3.dp).height(50.dp).clip(CircleShape)
+                .background(Color(0xCCB8B8B8)),
         )
         Row(
             Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).height(44.dp)
