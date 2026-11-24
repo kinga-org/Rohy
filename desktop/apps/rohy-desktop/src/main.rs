@@ -238,6 +238,8 @@ impl App {
         let (id, task) = window::open(window::Settings {
             size: iced::Size::new(width, height),
             min_size: Some(iced::Size::new(400.0, 600.0)),
+            // Taskbar and window switcher icon: the Rohy logo.
+            icon: window::icon::from_rgba(images::tray_icon_rgba(64), 64, 64).ok(),
             ..window::Settings::default()
         });
         self.windows.insert(id, view);

@@ -22,6 +22,10 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Rohy"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+# App icon and accent color (blueberry, used when the system accent is "Multicolor").
+xcrun actool Resources/Assets.xcassets --compile "$APP/Contents/Resources" --platform macosx \
+  --minimum-deployment-target 14.0 --app-icon AppIcon --accent-color AccentColor \
+  --output-partial-info-plist "$(mktemp -d)/assets.plist" --errors --warnings >/dev/null
 if [[ -n "${ROHY_VERSION:-}" ]]; then
   plutil -replace CFBundleShortVersionString -string "$ROHY_VERSION" "$APP/Contents/Info.plist"
 fi
