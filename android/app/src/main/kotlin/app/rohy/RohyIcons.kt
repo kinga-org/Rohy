@@ -42,6 +42,7 @@ object RohyIcons {
         line(12f, 9f, 12f, 13f); line(12f, 17f, 12.01f, 17f)
     }
     val Check = icon("check") { poly(false, 5f, 12f, 10f, 17f, 19f, 7f) }
+    val Close = icon("close") { line(6f, 6f, 18f, 18f); line(18f, 6f, 6f, 18f) }
     val Exclamation = icon("exclamation") { line(12f, 7f, 12f, 13f); line(12f, 17f, 12.01f, 17f) }
     val Question = icon("question") { path("M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"); line(12f, 17f, 12.01f, 17f) }
     val Refresh = icon("refresh") { poly(false, 23f, 4f, 23f, 10f, 17f, 10f); path("M20.5 15a9 9 0 1 1-2.1-9.4L23 10") }

@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Edge handle (phase 10): a thin bar over other apps, only while connected and only if switched on. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Enforced only for apps targeting Android 17 (API 37); requested at runtime once we target it. -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 

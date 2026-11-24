@@ -36,6 +36,19 @@ class Storage(context: Context) {
         get() = prefs.getString(KEY_JOURNAL, null)
         set(value) = prefs.edit().putString(KEY_JOURNAL, value).apply()
 
+    /** Edge handle (phase 10): switched on in the app, hidden with its ✕, and where it sits on the edge. */
+    var handleEnabled: Boolean
+        get() = prefs.getBoolean(KEY_HANDLE_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_HANDLE_ENABLED, value).apply()
+
+    var handleHidden: Boolean
+        get() = prefs.getBoolean(KEY_HANDLE_HIDDEN, false)
+        set(value) = prefs.edit().putBoolean(KEY_HANDLE_HIDDEN, value).apply()
+
+    var handlePosition: Float
+        get() = EdgeHandleRules.clampPosition(prefs.getFloat(KEY_HANDLE_POSITION, EdgeHandleRules.DEFAULT_POSITION))
+        set(value) = prefs.edit().putFloat(KEY_HANDLE_POSITION, EdgeHandleRules.clampPosition(value)).apply()
+
     @Synchronized
     fun identity(): Identity {
         prefs.getString(KEY_IDENTITY, null)?.let(::unwrap)?.let { return Identity(it) }
@@ -76,6 +89,9 @@ class Storage(context: Context) {
         const val KEY_PAIRED_AT = "paired_at"
         const val KEY_IDENTITY = "identity"
         const val KEY_JOURNAL = "journal"
+        const val KEY_HANDLE_ENABLED = "handle_enabled"
+        const val KEY_HANDLE_HIDDEN = "handle_hidden"
+        const val KEY_HANDLE_POSITION = "handle_position"
         const val KEY_ALIAS = "rohy_identity_wrap"
         const val KEYSTORE = "AndroidKeyStore"
         const val TRANSFORMATION = "AES/GCM/NoPadding"

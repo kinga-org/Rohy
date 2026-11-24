@@ -34,17 +34,21 @@ import app.rohy.core.PairingPayload
 import kotlinx.coroutines.delay
 
 /** Screens reached from the home screen. */
-private enum class Screen { HOME, RELIABILITY, JOURNAL }
+private enum class Screen { HOME, RELIABILITY, JOURNAL, HANDLE_PERMISSION }
 
 class MainActivity : ComponentActivity() {
     private lateinit var storage: Storage
     private var pairedMac by mutableStateOf<PairedMac?>(null)
     private var checks by mutableStateOf<List<ReliabilityCheck>>(emptyList())
+    private var handleEnabled by mutableStateOf(false)
+    /** Set while the user is in Android's "Afficher par-dessus les autres apps" screen for the edge handle. */
+    private var handlePermissionAsked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         storage = Storage(this)
         pairedMac = storage.pairedMac
+        handleEnabled = storage.handleEnabled && Settings.canDrawOverlays(this)
         requestStartupPermissions()
         if (pairedMac != null) SyncService.start(this)
         enableEdgeToEdge()
@@ -66,6 +70,11 @@ class MainActivity : ComponentActivity() {
                 when {
                     mac == null -> OnboardingScreen(onScan = ::scanQrCode, onPasteCode = ::pairFromClipboard)
                     screen == Screen.RELIABILITY -> ReliabilityScreen(checks, ::fix) { screen = Screen.HOME }
+                    screen == Screen.HANDLE_PERMISSION -> {
+                        // Back on the home screen as soon as the permission came back granted.
+                        LaunchedEffect(handleEnabled) { if (handleEnabled) screen = Screen.HOME }
+                        HandlePermissionScreen(onAllow = ::askHandlePermission, onLater = { screen = Screen.HOME })
+                    }
                     screen == Screen.JOURNAL ->
                         JournalScreen(journalDays(journal, System.currentTimeMillis())) { screen = Screen.HOME }
                     else -> HomeScreen(
@@ -80,6 +89,10 @@ class MainActivity : ComponentActivity() {
                         onReconnect = { SyncService.start(this, "reconnexion depuis l'app") },
                         onAllowLocalNetwork = { fix(CheckId.LOCAL_NETWORK) },
                         onAddTile = ::requestTile,
+                        handleEnabled = handleEnabled,
+                        onToggleHandle = { on ->
+                            if (on && !Settings.canDrawOverlays(this)) screen = Screen.HANDLE_PERMISSION else setHandle(on)
+                        },
                         onOpenReliability = { screen = Screen.RELIABILITY },
                         onOpenJournal = { screen = Screen.JOURNAL },
                         onForget = ::forgetMac,
@@ -93,6 +106,27 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         pairedMac = storage.pairedMac
         checks = reliabilityChecks(readFacts())
+        if (handlePermissionAsked && Settings.canDrawOverlays(this)) {
+            handlePermissionAsked = false
+            setHandle(true)
+        }
+        // The permission can be withdrawn in Android's settings: the switch follows.
+        if (handleEnabled && !Settings.canDrawOverlays(this)) handleEnabled = false
+    }
+
+    private fun askHandlePermission() {
+        handlePermissionAsked = true
+        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+        runCatching { startActivity(intent) }.onFailure {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        }
+    }
+
+    private fun setHandle(on: Boolean) {
+        storage.handleEnabled = on
+        if (on) storage.handleHidden = false
+        handleEnabled = on
+        SyncService.refreshHandle(this)
     }
 
     private fun scanQrCode() {
