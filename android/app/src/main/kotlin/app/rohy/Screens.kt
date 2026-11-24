@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +32,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -254,6 +257,8 @@ fun HomeScreen(
     onReconnect: () -> Unit,
     onAllowLocalNetwork: () -> Unit,
     onAddTile: () -> Unit,
+    handleEnabled: Boolean,
+    onToggleHandle: (Boolean) -> Unit,
     onOpenReliability: () -> Unit,
     onOpenJournal: () -> Unit,
     onForget: () -> Unit,
@@ -281,7 +286,7 @@ fun HomeScreen(
                 style = RohyText.small, color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (connected) Shortcuts(onAddTile)
+        if (connected) Shortcuts(onAddTile, handleEnabled, onToggleHandle)
         ReliabilityRow(content.reliability, onOpenReliability)
         ComputerCard(content.computer, content.pairedDetail, onForget)
     }
@@ -357,11 +362,23 @@ private fun LocalNetworkAlert(onAllow: () -> Unit) {
 }
 
 @Composable
-private fun Shortcuts(onAddTile: () -> Unit) {
+private fun Shortcuts(onAddTile: () -> Unit, handleEnabled: Boolean, onToggleHandle: (Boolean) -> Unit) {
     val c = rohyColors
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SectionTitle("Envoyer plus vite")
         Card {
+            // The whole row toggles, so TalkBack reads one switch with its label.
+            ShortcutRow(
+                RohyIcons.Send, "Poignée d'envoi", "Fine barre sur le bord, quand l'ordinateur est connecté.",
+                tile = c.primary to Color.White,
+                modifier = Modifier.toggleable(value = handleEnabled, role = Role.Switch, onValueChange = onToggleHandle),
+            ) {
+                Switch(
+                    checked = handleEnabled, onCheckedChange = null,
+                    colors = SwitchDefaults.colors(checkedTrackColor = c.primary, checkedThumbColor = Color.White),
+                )
+            }
+            Divider()
             ShortcutRow(RohyIcons.Tile, "Tuile des réglages rapides", "Glisse depuis le haut de l'écran, touche « Envoyer ».") {
                 PillButton("Ajouter", onAddTile, filled = false)
             }
@@ -374,10 +391,17 @@ private fun Shortcuts(onAddTile: () -> Unit) {
 }
 
 @Composable
-private fun ShortcutRow(icon: ImageVector, title: String, detail: String, trailing: @Composable () -> Unit = {}) {
+private fun ShortcutRow(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+    tile: Pair<Color, Color>? = null,
+    modifier: Modifier = Modifier,
+    trailing: @Composable () -> Unit = {},
+) {
     val c = rohyColors
-    Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        IconTile(icon, c.accentSoft, c.accentText)
+    Row(modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        IconTile(icon, tile?.first ?: c.accentSoft, tile?.second ?: c.accentText)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, style = RohyText.rowTitle, color = c.ink)
             Text(detail, style = RohyText.small, color = c.muted)
@@ -433,6 +457,80 @@ private fun ComputerCard(computer: String, detail: String, onForget: () -> Unit)
                 TextButton(onClick = { confirm = true }) { Text("Oublier", style = RohyText.smallStrong, color = c.danger) }
             }
         }
+    }
+}
+
+// Edge handle.
+
+/** Explains the edge handle before Android asks for "Afficher par-dessus les autres apps" (board: BubblePermission). */
+@Composable
+fun HandlePermissionScreen(onAllow: () -> Unit, onLater: () -> Unit) {
+    val c = rohyColors
+    Page {
+        BackBar("Poignée d'envoi", onLater)
+        HandlePreview()
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Envoie depuis n'importe quelle app, en un geste", style = RohyText.cardTitle, color = c.ink, modifier = Modifier.semantics { heading() })
+            Text(
+                "Une fine barre discrète sur le bord de l'écran. Copie un texte, même dans un jeu, touche la barre puis « Envoyer » : il arrive sur ton ordinateur.",
+                style = RohyText.body, color = c.muted,
+            )
+        }
+        Card {
+            Guarantee(RohyIcons.Computer, "Elle n'apparaît que quand ton téléphone est connecté à l'ordinateur.")
+            Divider()
+            Guarantee(RohyIcons.Shield, "Rohy ne lit le presse-papiers que quand tu touches « Envoyer ».")
+            Divider()
+            Guarantee(RohyIcons.Close, "Touche ✕ pour la masquer, à tout moment.")
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "Android va te demander d'autoriser « Afficher par-dessus les autres apps » pour Rohy.",
+                style = RohyText.small, color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
+            PrimaryButton("Autoriser et activer", RohyIcons.Send, onAllow)
+            TextButton(onClick = onLater, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("Plus tard", style = RohyText.button, color = c.accentText)
+            }
+        }
+    }
+}
+
+/** The handle drawn over an app in full screen, as on the board. */
+@Composable
+private fun HandlePreview() {
+    Box(Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(24.dp)).background(Color(0xFF10161F))) {
+        Column(
+            Modifier.align(Alignment.Center).padding(bottom = 40.dp).width(220.dp).clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF1A2433)).padding(vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text("Code copié", style = RohyText.small, color = Color(0xFFA9B4C4))
+            Text("4F7K-92QX", style = RohyText.cardTitle, color = Color.White)
+        }
+        Box(
+            Modifier.align(Alignment.TopEnd).padding(top = 36.dp, end = 5.dp).width(6.dp).height(48.dp).clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.6f)).border(1.dp, Color.Black.copy(alpha = 0.3f), CircleShape),
+        )
+        Row(
+            Modifier.align(Alignment.BottomEnd).padding(bottom = 24.dp).height(44.dp)
+                .clip(RoundedCornerShape(topStart = 22.dp, bottomStart = 22.dp)).background(Brand).padding(start = 6.dp, end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            IconTile(RohyIcons.Send, Color.White.copy(alpha = 0.16f), Color.White, size = 32.dp, radius = 16.dp, iconSize = 16.dp)
+            Text("Envoyer à l'ordinateur", style = RohyText.smallStrong, color = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun Guarantee(icon: ImageVector, text: String) {
+    val c = rohyColors
+    Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, contentDescription = null, tint = c.accentText, modifier = Modifier.size(20.dp))
+        Text(text, style = RohyText.body, color = c.ink)
     }
 }
 

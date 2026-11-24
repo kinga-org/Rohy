@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -20,6 +21,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PersistableBundle
+import android.provider.Settings
 import android.util.Log
 import app.rohy.core.Backoff
 import app.rohy.core.ClientSession
@@ -43,6 +45,7 @@ class SyncService : Service() {
     private val main = Handler(Looper.getMainLooper())
     private val backoff = Backoff()
     private lateinit var storage: Storage
+    private lateinit var edgeHandle: EdgeHandle
     private var client: RohyClient? = null
     private var retry: ScheduledFuture<*>? = null
     private var pairingToken: ByteArray? = null
@@ -73,6 +76,11 @@ class SyncService : Service() {
     override fun onCreate() {
         super.onCreate()
         storage = Storage(this)
+        edgeHandle = EdgeHandle(
+            this, storage,
+            onSend = { text -> executor.execute { handle(ACTION_SEND, text, null) } },
+            onHiddenChanged = { refreshHandle() },
+        )
         journal = ConnectionJournal.decode(storage.journalText)
         mutableJournal.value = journal.all()
         createChannel()
@@ -92,7 +100,13 @@ class SyncService : Service() {
         return START_STICKY
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        edgeHandle.reposition()
+    }
+
     override fun onDestroy() {
+        edgeHandle.update(false)
         runCatching { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(networkCallback) }
         executor.execute { disconnect() }
         executor.shutdown()
@@ -116,6 +130,11 @@ class SyncService : Service() {
                     outbox.addLast(clip)
                     reconnectNow()
                 }
+            }
+            ACTION_HANDLE -> main.post { refreshHandle() }
+            ACTION_SHOW_HANDLE -> {
+                storage.handleHidden = false
+                main.post { refreshHandle() }
             }
             ACTION_STOP -> {
                 disconnect()
@@ -231,8 +250,22 @@ class SyncService : Service() {
         mutableStatus.value = newStatus
         main.post {
             getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(newStatus))
+            edgeHandle.update(handleVisible())
         }
     }
+
+    /** Main thread: shows the edge handle when it should be, and keeps the notification's action in step. */
+    private fun refreshHandle() {
+        edgeHandle.update(handleVisible())
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(status.value))
+    }
+
+    private fun handleVisible() = EdgeHandleRules.visible(
+        connected = status.value.isConnected,
+        enabled = storage.handleEnabled,
+        hidden = storage.handleHidden,
+        canDrawOverlays = Settings.canDrawOverlays(this),
+    )
 
     private fun log(message: String) {
         Log.i(TAG, message)
@@ -257,14 +290,20 @@ class SyncService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         val sendAction = Notification.Action.Builder(null, "Envoyer le presse-papiers", send).build()
-        return Notification.Builder(this, CHANNEL_ID)
+        val builder = Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_link)
             .setContentTitle("Rohy")
             .setContentText(status.label)
             .setContentIntent(open)
             .setOngoing(true)
             .addAction(sendAction)
-            .build()
+        if (storage.handleEnabled && storage.handleHidden) {
+            val show = PendingIntent.getForegroundService(
+                this, 2, Intent(this, SyncService::class.java).setAction(ACTION_SHOW_HANDLE), PendingIntent.FLAG_IMMUTABLE,
+            )
+            builder.addAction(Notification.Action.Builder(null, "Afficher la poignée", show).build())
+        }
+        return builder.build()
     }
 
     companion object {
@@ -276,6 +315,8 @@ class SyncService : Service() {
         private const val ACTION_FORGET = "app.rohy.FORGET"
         private const val ACTION_SEND = "app.rohy.SEND"
         private const val ACTION_PAIR = "app.rohy.PAIR"
+        private const val ACTION_HANDLE = "app.rohy.HANDLE"
+        private const val ACTION_SHOW_HANDLE = "app.rohy.SHOW_HANDLE"
         private const val EXTRA_TEXT = "text"
         private const val EXTRA_URI = "uri"
         private const val EXTRA_REASON = "reason"
@@ -294,6 +335,9 @@ class SyncService : Service() {
         fun forget(context: Context) = launch(context, ACTION_FORGET)
         fun send(context: Context, text: String) = launch(context, ACTION_SEND) { putExtra(EXTRA_TEXT, text) }
         fun pair(context: Context, uri: String) = launch(context, ACTION_PAIR) { putExtra(EXTRA_URI, uri) }
+
+        /** After the edge handle settings changed in the app. */
+        fun refreshHandle(context: Context) = launch(context, ACTION_HANDLE)
 
         private fun launch(context: Context, action: String, extras: Intent.() -> Unit = {}) {
             val intent = Intent(context, SyncService::class.java).setAction(action).apply(extras)
