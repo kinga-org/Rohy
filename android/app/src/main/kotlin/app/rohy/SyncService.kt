@@ -79,7 +79,6 @@ class SyncService : Service() {
         edgeHandle = EdgeHandle(
             this, storage,
             onSend = { text -> executor.execute { handle(ACTION_SEND, text, null) } },
-            onHiddenChanged = { refreshHandle() },
         )
         journal = ConnectionJournal.decode(storage.journalText)
         mutableJournal.value = journal.all()
@@ -132,10 +131,6 @@ class SyncService : Service() {
                 }
             }
             ACTION_HANDLE -> main.post { refreshHandle() }
-            ACTION_SHOW_HANDLE -> {
-                storage.handleHidden = false
-                main.post { refreshHandle() }
-            }
             ACTION_STOP -> {
                 disconnect()
                 publish(SyncStatus.Stopped)
@@ -254,16 +249,14 @@ class SyncService : Service() {
         }
     }
 
-    /** Main thread: shows the edge handle when it should be, and keeps the notification's action in step. */
+    /** Main thread: shows the edge handle when it should be. */
     private fun refreshHandle() {
         edgeHandle.update(handleVisible())
-        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(status.value))
     }
 
     private fun handleVisible() = EdgeHandleRules.visible(
         connected = status.value.isConnected,
         enabled = storage.handleEnabled,
-        hidden = storage.handleHidden,
         canDrawOverlays = Settings.canDrawOverlays(this),
     )
 
@@ -297,12 +290,6 @@ class SyncService : Service() {
             .setContentIntent(open)
             .setOngoing(true)
             .addAction(sendAction)
-        if (storage.handleEnabled && storage.handleHidden) {
-            val show = PendingIntent.getForegroundService(
-                this, 2, Intent(this, SyncService::class.java).setAction(ACTION_SHOW_HANDLE), PendingIntent.FLAG_IMMUTABLE,
-            )
-            builder.addAction(Notification.Action.Builder(null, "Afficher la poignée", show).build())
-        }
         return builder.build()
     }
 
@@ -316,7 +303,6 @@ class SyncService : Service() {
         private const val ACTION_SEND = "app.rohy.SEND"
         private const val ACTION_PAIR = "app.rohy.PAIR"
         private const val ACTION_HANDLE = "app.rohy.HANDLE"
-        private const val ACTION_SHOW_HANDLE = "app.rohy.SHOW_HANDLE"
         private const val EXTRA_TEXT = "text"
         private const val EXTRA_URI = "uri"
         private const val EXTRA_REASON = "reason"

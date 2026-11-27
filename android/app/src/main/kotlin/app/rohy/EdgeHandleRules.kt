@@ -20,11 +20,8 @@ object EdgeHandleRules {
     /** "Envoyé" / "Rien à envoyer" stay this long before the bar comes back. */
     const val RESULT_MS = 1_600L
 
-    /** The "Poignée masquée" message (with "Annuler") stays this long. */
-    const val HIDDEN_MESSAGE_MS = 4_000L
-
-    fun visible(connected: Boolean, enabled: Boolean, hidden: Boolean, canDrawOverlays: Boolean): Boolean =
-        connected && enabled && !hidden && canDrawOverlays
+    fun visible(connected: Boolean, enabled: Boolean, canDrawOverlays: Boolean): Boolean =
+        connected && enabled && canDrawOverlays
 
     fun clampPosition(position: Float): Float =
         if (position.isNaN()) DEFAULT_POSITION else position.coerceIn(MIN_POSITION, MAX_POSITION)

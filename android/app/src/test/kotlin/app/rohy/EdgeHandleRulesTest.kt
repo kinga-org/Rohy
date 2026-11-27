@@ -8,12 +8,11 @@ import org.junit.Test
 
 class EdgeHandleRulesTest {
     @Test
-    fun visibleOnlyWhenConnectedEnabledShownAndAllowed() {
-        assertTrue(EdgeHandleRules.visible(connected = true, enabled = true, hidden = false, canDrawOverlays = true))
-        assertFalse(EdgeHandleRules.visible(connected = false, enabled = true, hidden = false, canDrawOverlays = true))
-        assertFalse(EdgeHandleRules.visible(connected = true, enabled = false, hidden = false, canDrawOverlays = true))
-        assertFalse(EdgeHandleRules.visible(connected = true, enabled = true, hidden = true, canDrawOverlays = true))
-        assertFalse(EdgeHandleRules.visible(connected = true, enabled = true, hidden = false, canDrawOverlays = false))
+    fun visibleOnlyWhenConnectedEnabledAndAllowed() {
+        assertTrue(EdgeHandleRules.visible(connected = true, enabled = true, canDrawOverlays = true))
+        assertFalse(EdgeHandleRules.visible(connected = false, enabled = true, canDrawOverlays = true))
+        assertFalse(EdgeHandleRules.visible(connected = true, enabled = false, canDrawOverlays = true))
+        assertFalse(EdgeHandleRules.visible(connected = true, enabled = true, canDrawOverlays = false))
     }
 
     @Test

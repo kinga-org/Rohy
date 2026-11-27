@@ -19,15 +19,19 @@ autorisation, réglage dans l'accueil, sombre.
 - Visible seulement si : téléphone connecté à l'ordinateur, poignée activée, non masquée, autorisation
   accordée. Elle disparaît seule à la déconnexion.
 - Comme chez Samsung, seul un glissé vers le centre de l'écran ouvre l'onglet « Envoyer à
-  l'ordinateur » + ✕ ; un toucher ne fait rien (pas d'ouverture en tapant au clavier près du bord).
+  l'ordinateur », qui sort du bord en glissant, à la hauteur de la barre ; un toucher ne fait rien (pas d'ouverture en tapant au clavier près du bord).
   La zone de la poignée est exclue du geste Retour d'Android (`systemGestureExclusionRects`) ;
   TalkBack peut l'ouvrir par un clic d'accessibilité. Toucher « Envoyer » lit le presse-papiers (la
   fenêtre de l'onglet prend le focus, ce qui autorise la lecture) et l'envoie. Repli : l'activité
   transparente déjà utilisée par la tuile.
 - Retour visuel : « Envoyé » (vert) ou « Rien à envoyer » (orange), puis retour à la barre. L'onglet se
   replie seul après 4 s, ou par Retour.
-- ✕ masque la poignée (message avec « Annuler ») ; la notification Rohy propose alors « Afficher la
-  poignée ».
+- Pas de ✕ sur l'onglet (retiré le 27 nov. à la demande du propriétaire : il masquait la poignée sans
+  couper l'interrupteur de l'accueil). On active ou désactive la poignée seulement avec cet
+  interrupteur.
+- La fenêtre garde la hauteur et la place de la barre dans tous les états ; seule sa largeur suit le
+  contenu, ancré au bord droit. Avant, elle changeait de taille et de position à l'ouverture et
+  l'onglet semblait arriver du haut.
 - Appui long puis glisser : déplacer la poignée verticalement ; position gardée en fraction de la
   hauteur, valable en portrait comme en paysage (recalculée à la rotation).
 - Accueil : ligne « Poignée d'envoi » avec interrupteur dans « Envoyer plus vite » ; écran d'explication

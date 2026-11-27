@@ -124,7 +124,6 @@ class MainActivity : ComponentActivity() {
 
     private fun setHandle(on: Boolean) {
         storage.handleEnabled = on
-        if (on) storage.handleHidden = false
         handleEnabled = on
         SyncService.refreshHandle(this)
     }
