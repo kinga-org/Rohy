@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { pathFor, t, type Lang } from "@/content/i18n";
 import { downloadUrl, LATEST, type Platform } from "@/content/releases";
+import { softwareApplication } from "@/content/structuredData";
 import { DownloadIcon, Duo, PlatformIcon } from "./Icons";
 import { Shell } from "./Shell";
 
@@ -17,6 +18,11 @@ export function HomePage({ lang }: { lang: Lang }) {
   return (
     <Shell lang={lang} page="home">
       <main>
+        <script
+          type="application/ld+json"
+          // Built from our own constants only, so no user text can reach this script.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplication(lang)).replace(/</g, "\\u003c") }}
+        />
         <section className="hero">
           <div className="hero-text">
             <span className="chip chip-sun">{d.badge}</span>
