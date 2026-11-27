@@ -23,7 +23,8 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 - Dernière publiée : **0.1.4** (Android, macOS, Windows, Linux), APK signé avec la clé de test.
 - Dans `main`, pas encore publié : Android Lint en CI, boutons « Ouvrir » Samsung/Huawei corrigés,
-  poignée d'envoi (phase 10).
+  poignée d'envoi (phase 10), identité Lagon & Soleil avec le logo « La corde » sur toutes les apps
+  (phase 11), seuil de couverture de la CI Windows corrigé.
 - Testé sur téléphone : Samsung S24 Ultra (Android 16), Huawei P30 Pro (Android 10). Non testés :
   Android 11 à 15 et 17, `Rohy.exe` sur Windows. Bureau : l'app Linux fonctionne sur le portable du
   propriétaire.
