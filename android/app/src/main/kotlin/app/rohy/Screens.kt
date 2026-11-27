@@ -425,7 +425,7 @@ private fun Shortcuts(onAddTile: () -> Unit, handleEnabled: Boolean, onToggleHan
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             // The whole row toggles, so TalkBack reads one switch with its label.
             ShortcutRow(
-                RohyIcons.Send, "Poignée d'envoi", "Glisse le bord droit vers le centre.",
+                RohyIcons.Send, "Poignée d'envoi", "Glisse la barre vers le centre. Appui long pour la déplacer.",
                 modifier = item(0).toggleable(value = handleEnabled, role = Role.Switch, onValueChange = onToggleHandle),
             ) {
                 Switch(
@@ -529,7 +529,7 @@ fun HandlePermissionScreen(onAllow: () -> Unit, onLater: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Envoie depuis n'importe quelle app, en un geste", style = RohyText.cardTitle, color = c.ink, modifier = Modifier.semantics { heading() })
             Text(
-                "Une fine barre discrète sur le bord de l'écran. Copie un texte, même dans un jeu, glisse la barre vers le centre puis touche « Envoyer » : il arrive sur ton ordinateur.",
+                "Une fine barre discrète sur le bord de l'écran. Copie un texte, même dans un jeu, glisse la barre vers le centre puis touche « Envoyer » : il arrive sur ton ordinateur. Appui long sur la barre pour la mettre où tu veux, à gauche, à droite ou dans un coin.",
                 style = RohyText.body, color = c.muted,
             )
         }

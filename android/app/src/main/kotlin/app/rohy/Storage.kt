@@ -41,6 +41,12 @@ class Storage(context: Context) {
         get() = prefs.getBoolean(KEY_HANDLE_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_HANDLE_ENABLED, value).apply()
 
+    /** Side of the screen the edge handle sits on (right by default, like Samsung's). */
+    var handleSide: HandleSide
+        get() = if (prefs.getString(KEY_HANDLE_SIDE, null) == "left") HandleSide.LEFT else HandleSide.RIGHT
+        set(value) = prefs.edit().putString(KEY_HANDLE_SIDE, if (value == HandleSide.LEFT) "left" else "right").apply()
+
+    /** Where the handle's middle is along its side's track, from 0 (top) to 1 (bottom). */
     var handlePosition: Float
         get() = EdgeHandleRules.clampPosition(prefs.getFloat(KEY_HANDLE_POSITION, EdgeHandleRules.DEFAULT_POSITION))
         set(value) = prefs.edit().putFloat(KEY_HANDLE_POSITION, EdgeHandleRules.clampPosition(value)).apply()
@@ -87,6 +93,7 @@ class Storage(context: Context) {
         const val KEY_JOURNAL = "journal"
         const val KEY_HANDLE_ENABLED = "handle_enabled"
         const val KEY_HANDLE_POSITION = "handle_position"
+        const val KEY_HANDLE_SIDE = "handle_side"
         const val KEY_ALIAS = "rohy_identity_wrap"
         const val KEYSTORE = "AndroidKeyStore"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
