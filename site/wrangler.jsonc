@@ -15,8 +15,7 @@
     {
       "binding": "DB",
       "database_name": "rohy-reviews",
-      // Filled in once with the id printed by `npx wrangler d1 create rohy-reviews`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "371f8a47-62bc-4d3b-aac5-26ce812e6b6f",
       "migrations_dir": "migrations"
     }
   ],
