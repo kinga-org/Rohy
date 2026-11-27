@@ -18,7 +18,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 | [09 — Plusieurs ordinateurs par téléphone](../phases/09-plusieurs-ordinateurs.md) | À faire | Tout |
 | [10 — Poignée d'envoi](../phases/10-poignee-envoi.md) | Fonctionne (Samsung) | Essai sur le Huawei (Android 10) |
 | [11 — Identité Lagon & Soleil, logo « La corde »](../phases/11-identite.md) | En cours (Android, Mac, Windows, Linux codés) | Essais réels sur chaque système, autres écrans Android |
-| [12 — Site vitrine `rohy.kingalabs.com`](../phases/12-site-vitrine.md) | Codé, pas en ligne | Mise en ligne sur Cloudflare (D1, R2, Turnstile), envoi des fichiers depuis le workflow de release |
+| [12 — Site vitrine `rohy.kingalabs.com`](../phases/12-site-vitrine.md) | En ligne | Envoi des fichiers dans R2 depuis le workflow de release |
 
 ## Releases
 
@@ -42,7 +42,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Prochaines étapes
 
-1. Phase 12 : mettre le site en ligne sur `rohy.kingalabs.com` (étapes dans `site/README.md`).
+1. Phase 12 : envoyer un premier vrai avis depuis https://rohy.kingalabs.com.
 2. Phase 11 : essayer l'identité Lagon & Soleil sur chaque système (Android clair/sombre, Mac, Windows, Linux).
 3. Phase 10 : essayer la poignée sur le Huawei (Android 10).
 4. Phase 08 : essayer `Rohy.exe` sur un vrai Windows.

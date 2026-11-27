@@ -29,8 +29,11 @@ Sélecteur de langue EN | FR : dans l'en-tête sur ordinateur, en bas du menu su
 - CI : job `site` (types, tests, export statique).
 - Essayé en local (`wrangler dev`) : pages, menu téléphone, envoi d'un avis, validation, téléchargement.
 
+- En ligne le 2026-11-27 sur https://rohy.kingalabs.com : base D1 `rohy-reviews`, bucket R2
+  `rohy-downloads` (fichiers 0.1.2 à 0.1.4), clés Turnstile, Worker `rohy-site`. Pages, 404, API des
+  avis et téléchargements vérifiés en ligne ; le widget Turnstile se charge avec la vraie clé.
+
 ## Reste à faire
-- Mise en ligne par le propriétaire (étapes dans `site/README.md`) : base D1, bucket R2, clés
-  Turnstile, envoi des fichiers 0.1.4, `npm run deploy`.
+- Premier vrai avis envoyé depuis le site en ligne (essai par le propriétaire).
 - Envoyer les fichiers dans R2 depuis le workflow de release (jeton Cloudflare en secret GitHub).
 - Plus tard : prévenir par e-mail quand un avis arrive (Cloudflare Email Sending), mode sombre.
