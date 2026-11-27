@@ -10,6 +10,8 @@ et laisser un avis. Public visé : le monde entier, donc anglais par défaut et 
 Canvas « Rohy — site vitrine » (https://claude.ai/artifact/DridFj4pX5YrDQvkvS5M9w) : accueil
 (ordinateur et téléphone), Nouveautés, Avis. Couleurs et logo de la phase 11. Sur téléphone, l'en-tête
 tient sur une ligne : logo, bouton « Télécharger » compact et bouton menu.
+Sélecteur de langue EN | FR : dans l'en-tête sur ordinateur, en bas du menu sur téléphone
+(écran « Menu ouvert — téléphone ») ; il garde la même page dans l'autre langue.
 
 ## Choix validés
 - Domaine `kingalabs.com` acheté chez Cloudflare Registrar (2026-11-27) ; le site est sur le

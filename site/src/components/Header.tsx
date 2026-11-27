@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { pathFor, t, type Lang, type Page } from "@/content/i18n";
 import { Logo, MenuIcon } from "./Icons";
+import { LangSwitch } from "./LangSwitch";
 
 /** Site header. On phones the links move into a menu so the bar stays on one line. */
 export function Header({ lang, page }: { lang: Lang; page: Page }) {
@@ -11,7 +12,6 @@ export function Header({ lang, page }: { lang: Lang; page: Page }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const other: Lang = lang === "en" ? "fr" : "en";
   const download = `${pathFor(lang, "home")}#download`;
 
   useEffect(() => {
@@ -41,6 +41,7 @@ export function Header({ lang, page }: { lang: Lang; page: Page }) {
         <Link href={pathFor(lang, "releases")} aria-current={current("releases")}>{d.releases}</Link>
         <Link href={pathFor(lang, "reviews")} aria-current={current("reviews")}>{d.reviews}</Link>
       </nav>
+      <LangSwitch lang={lang} page={page} label={d.language} className="lang-header" />
       <Link href={download} className="pill pill-primary cta">{d.download}</Link>
       <button
         ref={buttonRef}
@@ -59,9 +60,10 @@ export function Header({ lang, page }: { lang: Lang; page: Page }) {
           <Link href={pathFor(lang, "releases")} aria-current={current("releases")} onClick={close}>{d.releases}</Link>
           <Link href={pathFor(lang, "reviews")} aria-current={current("reviews")} onClick={close}>{d.reviews}</Link>
           <hr />
-          <Link href={pathFor(other, page)} hrefLang={other} lang={other} aria-label={d.otherLanguageLabel} onClick={close}>
-            {d.otherLanguage}
-          </Link>
+          <div className="menu-lang">
+            <span>{d.language}</span>
+            <LangSwitch lang={lang} page={page} label={d.language} onPick={close} />
+          </div>
         </nav>
       )}
     </header>

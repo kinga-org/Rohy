@@ -31,6 +31,7 @@ const en = {
     closeMenu: "Close menu",
     otherLanguage: "Français",
     otherLanguageLabel: "Lire en français",
+    language: "Language",
   },
   home: {
     badge: "Android ⇄ Mac, Windows, Linux",
@@ -160,6 +161,7 @@ const fr: Dict = {
     closeMenu: "Fermer le menu",
     otherLanguage: "English",
     otherLanguageLabel: "Read in English",
+    language: "Langue",
   },
   home: {
     badge: "Android ⇄ Mac, Windows, Linux",
