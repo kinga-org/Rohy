@@ -44,3 +44,16 @@ jobs:
       - name: Desktop (fmt + clippy + tests + coverage)
         shell: bash
         run: scripts/check-desktop.sh
+
+  site:
+    # Showcase website (Next.js static export + Cloudflare Worker for reviews and downloads).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Site (types + tests + static build)
+        run: scripts/check-site.sh

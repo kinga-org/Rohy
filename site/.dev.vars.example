@@ -1,0 +1,2 @@
+# Copy to .dev.vars for `npm run preview`. These are Cloudflare's public Turnstile test keys (always pass).
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA

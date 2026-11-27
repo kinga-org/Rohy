@@ -22,6 +22,7 @@ malgache.
 | `mac/` | Paquet Swift : `RohyCore` (protocole, crypto), `RohyServer` (WebSocket + Bonjour), app barre de menus `Rohy`, `rohy-harness` (tests d'interopérabilité) |
 | `desktop/` | Espace de travail Cargo pour Windows/Linux : `rohy-core` (protocole en Rust), `rohy-server` (WebSocket + Bonjour, `rohy-harness`), app `apps/rohy-desktop` (iced) |
 | `android/` | `core` (protocole Kotlin, JVM pur) et `app` (service, tuile, partage, interface Compose) |
+| `site/` | Site vitrine `rohy.kingalabs.com` : Next.js (export statique) + Worker Cloudflare pour les avis (D1) et les téléchargements (R2), voir [site/README.md](site/README.md) |
 | `protocol/` | Vecteurs de test partagés par les trois implémentations (Swift, Kotlin, Rust) |
 | `docs/` | Protocole, phases, backlog, étude concurrentielle, [avancement](docs/avancement/README.md) |
 
@@ -50,6 +51,7 @@ La description de la PR indique ce qui a été vérifié de l'autre côté, ou p
 - macOS 14+, Xcode (Swift 6).
 - Android SDK (plateforme 36) et un JDK 21 (celui d'Android Studio convient).
 - Rust stable, `cargo install cargo-llvm-cov` et `rustup component add llvm-tools-preview` (bureau).
+- Node.js 22+ (site vitrine).
 
 ## Commandes
 
@@ -58,6 +60,7 @@ scripts/setup.sh          # installe les hooks Git du dépôt
 scripts/check-mac.sh      # tests Swift + seuil de couverture
 scripts/check-desktop.sh  # Rust : fmt, clippy, tests + seuil de couverture (cargo-llvm-cov)
 scripts/check-android.sh  # tests Kotlin (dont client Kotlin ↔ vrai serveur Swift) + Kover + build debug
+scripts/check-site.sh     # site vitrine : types, tests, export statique
 mac/scripts/bundle.sh     # construit mac/dist/Rohy.app
 ```
 
