@@ -62,10 +62,22 @@ class ProcessTextActivity : Activity() {
     }
 }
 
-/** Quick Settings tile "Envoyer au Mac". */
+/** Quick Settings tile "Envoyer au Mac". Reports whether it is on the panel, for the home screen's button. */
 class ClipTileService : TileService() {
+    override fun onTileAdded() {
+        super.onTileAdded()
+        Storage(this).tileAdded = true
+    }
+
+    override fun onTileRemoved() {
+        super.onTileRemoved()
+        Storage(this).tileAdded = false
+    }
+
     override fun onStartListening() {
         super.onStartListening()
+        // Listening means the tile is shown on the panel (also covers a tile added before this was tracked).
+        Storage(this).tileAdded = true
         val computer = Storage(this).pairedMac?.displayName
         qsTile?.apply {
             state = if (computer == null) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE

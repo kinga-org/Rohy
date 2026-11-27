@@ -182,7 +182,10 @@ private fun PillButton(text: String, onClick: () -> Unit, filled: Boolean, conta
     val colors = if (filled) {
         ButtonDefaults.buttonColors(containerColor = container ?: c.primary, contentColor = c.onPrimary)
     } else {
-        ButtonDefaults.buttonColors(containerColor = c.accentSoft, contentColor = c.onAccentSoft)
+        ButtonDefaults.buttonColors(
+            containerColor = container ?: c.accentSoft,
+            contentColor = if (container != null) c.ink else c.onAccentSoft,
+        )
     }
     val modifier = Modifier.heightIn(min = 40.dp)
     val padding = PaddingValues(horizontal = 14.dp)
@@ -259,7 +262,9 @@ fun HomeScreen(
     onSend: () -> Unit,
     onReconnect: () -> Unit,
     onAllowLocalNetwork: () -> Unit,
+    tileAdded: Boolean,
     onAddTile: () -> Unit,
+    onRemoveTile: () -> Unit,
     handleEnabled: Boolean,
     onToggleHandle: (Boolean) -> Unit,
     onOpenReliability: () -> Unit,
@@ -289,7 +294,7 @@ fun HomeScreen(
                 style = RohyText.small, color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (connected) Shortcuts(onAddTile, handleEnabled, onToggleHandle)
+        if (connected) Shortcuts(tileAdded, onAddTile, onRemoveTile, handleEnabled, onToggleHandle)
         ReliabilityRow(content.reliability, onOpenReliability)
         ComputerCard(content.computer, content.pairedDetail, onForget)
     }
@@ -416,7 +421,13 @@ private fun groupShape(index: Int, count: Int): RoundedCornerShape {
 }
 
 @Composable
-private fun Shortcuts(onAddTile: () -> Unit, handleEnabled: Boolean, onToggleHandle: (Boolean) -> Unit) {
+private fun Shortcuts(
+    tileAdded: Boolean,
+    onAddTile: () -> Unit,
+    onRemoveTile: () -> Unit,
+    handleEnabled: Boolean,
+    onToggleHandle: (Boolean) -> Unit,
+) {
     val c = rohyColors
     @Composable
     fun item(index: Int) = Modifier.fillMaxWidth().clip(groupShape(index, 4)).background(c.surface)
@@ -434,10 +445,15 @@ private fun Shortcuts(onAddTile: () -> Unit, handleEnabled: Boolean, onToggleHan
                 )
             }
             ShortcutRow(
-                RohyIcons.Tile, "Tuile des réglages rapides", "Glisse depuis le haut, touche « Envoyer ».",
+                RohyIcons.Tile, "Tuile des réglages rapides", TileRules.detail(tileAdded),
                 tile = c.sunSoft to c.onSunSoft, modifier = item(1),
             ) {
-                PillButton("Ajouter", onAddTile, filled = false)
+                // Follows the panel: "Retirer" (neutral) once the tile is there, "Ajouter" otherwise.
+                if (tileAdded) {
+                    PillButton(TileRules.button(true), onRemoveTile, filled = false, container = c.neutralSoft)
+                } else {
+                    PillButton(TileRules.button(false), onAddTile, filled = false)
+                }
             }
             ShortcutRow(RohyIcons.TextSelect, "Menu de sélection", "Sélectionne un texte, puis « Envoyer à l'ordinateur ».", modifier = item(2))
             ShortcutRow(
