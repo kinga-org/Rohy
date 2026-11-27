@@ -49,9 +49,6 @@ object RohyIcons {
     val Sent = icon("sent") { line(12f, 19f, 12f, 5f); poly(false, 5f, 12f, 12f, 5f, 19f, 12f) }
     val Received = icon("received") { line(12f, 5f, 12f, 19f); poly(false, 19f, 12f, 12f, 19f, 5f, 12f) }
 
-    /** The two links of the Rohy mark, drawn over its disc. */
-    val Mark = icon("mark", viewport = 40f, stroke = 2.6f) { rect(7.2f, 15.6f, 13.6f, 8.8f, 4.4f); rect(19.2f, 15.6f, 13.6f, 8.8f, 4.4f) }
-
     /** SVG path data of each shape, so every icon reads like its board source. */
     class Shapes {
         val paths = mutableListOf<String>()

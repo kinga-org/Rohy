@@ -17,6 +17,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 | [08 — App de bureau Windows et Linux (iced)](../phases/08-app-bureau-iced.md) | En cours | Installateurs (`.msi`, `.deb` / AppImage), essai sur un vrai Windows (Linux essayé : fonctionne) |
 | [09 — Plusieurs ordinateurs par téléphone](../phases/09-plusieurs-ordinateurs.md) | À faire | Tout |
 | [10 — Poignée d'envoi](../phases/10-poignee-envoi.md) | Fonctionne (Samsung) | Essai sur le Huawei (Android 10) |
+| [11 — Identité Myrtille & Pêche](../phases/11-identite-myrtille.md) | En cours (Android, Mac, Windows, Linux codés) | Essais réels sur chaque système, autres écrans Android |
 
 ## Releases
 
@@ -39,7 +40,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Prochaines étapes
 
-1. Nouvelle identité Android « Myrtille & Pêche » (logo, couleurs, écrans).
+1. Phase 11 : essayer la nouvelle identité sur chaque système (Android clair/sombre, Mac, Windows, Linux).
 2. Phase 10 : essayer la poignée sur le Huawei (Android 10).
 3. Phase 08 : essayer `Rohy.exe` sur un vrai Windows.
 4. Phase 06 : test d'endurance de 24 h, écran éteint, changement de Wi-Fi et veille du Mac.
@@ -50,6 +51,6 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Journal
 
-- [2026-11-24](2026-11-24.md) — envoi depuis un jeu : poignée d'envoi façon Samsung (phase 10) ; piste « verre » écartée, nouvelle identité Myrtille & Pêche choisie.
+- [2026-11-24](2026-11-24.md) — envoi depuis un jeu : poignée d'envoi façon Samsung (phase 10) ; piste « verre » écartée, identité Myrtille & Pêche choisie et codée sur Android, Mac, Windows et Linux (phase 11).
 - [2026-11-19](2026-11-19.md) — plantage du scan en release (R8) et plantage Android 10 corrigés, garde-fous R8, Animal Sniffer et Lint en CI ; app Mac native ; build Linux ; 0.1.2 à 0.1.4 publiées ; phase 07 terminée.
 - [2026-11-18](2026-11-18.md) — étude, MVP texte dans les deux sens, premier test réel, CI dans kinga-org, début de la phase 06.

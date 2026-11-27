@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Blueberry of the Rohy logo (palette Myrtille & Pêche). -->
+    <color name="launcher_background">#FF5653D0</color>
+</resources>

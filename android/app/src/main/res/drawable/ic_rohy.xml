@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One-color Rohy silhouette for the notification and the Quick Settings tile. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="64"
+    android:viewportHeight="68">
+    <group android:translateX="-18" android:translateY="-16.5">
+        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="M41,27 H59 A14,14 0 0 1 73,41 V67 A14,14 0 0 1 59,81 H41 A14,14 0 0 1 27,67 V41 A14,14 0 0 1 41,27 Z M38.4,51 A3.6,3.6 0 1 0 45.6,51 A3.6,3.6 0 1 0 38.4,51 Z M54.4,51 A3.6,3.6 0 1 0 61.6,51 A3.6,3.6 0 1 0 54.4,51 Z M42.5,60 Q50,69.5 57.5,60 Q50,65 42.5,60 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M45.5,20 H54.5 A6.5,6.5 0 0 1 54.5,33 H45.5 A6.5,6.5 0 0 1 45.5,20 Z" />
+    </group>
+</vector>

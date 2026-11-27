@@ -56,8 +56,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     /// so an open submenu is not closed for nothing.
     private func refresh() {
         let connected = Set(model.connected.map(\.id))
-        item.button?.image = NSImage(systemSymbolName: connected.isEmpty ? "link" : "link.circle.fill",
-                                     accessibilityDescription: "Rohy")
+        // The Rohy clipboard as a template image; dimmed, like system items, while no phone is connected.
+        if item.button?.image == nil { item.button?.image = MenuBarGlyph.image() }
+        item.button?.appearsDisabled = connected.isEmpty
         updateStatus()
         let signature = model.trusted.map { "\($0.id):\($0.name):\(connected.contains($0.id))" }
             + ["port:\(model.port.map(String.init) ?? "-")", "error:\(model.startupError ?? "")"]

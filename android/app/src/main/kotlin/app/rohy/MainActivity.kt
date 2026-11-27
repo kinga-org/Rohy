@@ -159,7 +159,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT < 33) return toast("Ajoute la tuile « Envoyer à l'ordinateur » depuis l'édition des réglages rapides")
         getSystemService(StatusBarManager::class.java).requestAddTileService(
             ComponentName(this, ClipTileService::class.java), getString(R.string.tile_label),
-            Icon.createWithResource(this, R.drawable.ic_link), mainExecutor,
+            Icon.createWithResource(this, R.drawable.ic_rohy), mainExecutor,
         ) {}
     }
 

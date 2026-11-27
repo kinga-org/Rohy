@@ -1,5 +1,7 @@
 package app.rohy
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,11 +17,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -44,7 +48,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -64,9 +77,7 @@ private fun breakable(name: String) = name.replace("-", "-\u200B")
 
 @Composable
 private fun Logo(size: Dp) {
-    Box(Modifier.size(size).clip(CircleShape).background(rohyColors.logo), contentAlignment = Alignment.Center) {
-        Icon(RohyIcons.Mark, contentDescription = null, tint = Color.White, modifier = Modifier.size(size))
-    }
+    Image(painterResource(R.drawable.rohy_logo), contentDescription = null, modifier = Modifier.size(size))
 }
 
 /** Scrolling page on the ground color, below the status bar. */
@@ -74,19 +85,19 @@ private fun Logo(size: Dp) {
 private fun Page(content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier.fillMaxSize().background(rohyColors.ground).windowInsetsPadding(WindowInsets.safeDrawing)
-            .verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+            .verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
         content = content,
     )
 }
 
 @Composable
 private fun AppBar(actions: @Composable RowScope.() -> Unit = {}) {
-    Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Logo(32.dp)
+    Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Logo(40.dp)
         Text(
             "Rohy", style = RohyText.appTitle, color = rohyColors.ink,
-            modifier = Modifier.padding(start = 10.dp).weight(1f).semantics { heading() },
+            modifier = Modifier.padding(start = 12.dp).weight(1f).semantics { heading() },
         )
         actions()
     }
@@ -104,16 +115,15 @@ private fun BackBar(title: String, onBack: () -> Unit) {
 
 @Composable
 private fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(20.dp)
     Column(
-        modifier.fillMaxWidth().clip(shape).background(rohyColors.surface).border(1.dp, rohyColors.line, shape),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(rohyColors.surface),
         content = content,
     )
 }
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text.uppercase(Locale.FRANCE), style = RohyText.section, color = rohyColors.muted, modifier = Modifier.semantics { heading() })
+    Text(text, style = RohyText.section, color = rohyColors.muted, modifier = Modifier.padding(start = 8.dp).semantics { heading() })
 }
 
 @Composable
@@ -122,7 +132,7 @@ private fun Divider() {
 }
 
 @Composable
-private fun IconTile(icon: ImageVector, background: Color, tint: Color, size: Dp = 40.dp, radius: Dp = 12.dp, iconSize: Dp = 20.dp) {
+private fun IconTile(icon: ImageVector, background: Color, tint: Color, size: Dp = 44.dp, radius: Dp = 16.dp, iconSize: Dp = 20.dp) {
     Box(Modifier.size(size).clip(RoundedCornerShape(radius)).background(background), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
@@ -139,10 +149,10 @@ private fun PrimaryButton(text: String, icon: ImageVector, onClick: () -> Unit, 
     val c = rohyColors
     Button(
         onClick = onClick, enabled = enabled,
-        modifier = Modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().height(60.dp),
+        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = c.primary, contentColor = Color.White,
+            containerColor = c.primary, contentColor = c.onPrimary,
             disabledContainerColor = c.disabled, disabledContentColor = c.disabledText,
         ),
     ) {
@@ -157,7 +167,7 @@ private fun SecondaryButton(text: String, icon: ImageVector, onClick: () -> Unit
     OutlinedButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(height),
-        shape = RoundedCornerShape(16.dp),
+        shape = CircleShape,
         border = androidx.compose.foundation.BorderStroke(1.dp, c.controlLine),
         colors = ButtonDefaults.outlinedButtonColors(containerColor = c.surface, contentColor = c.ink),
     ) {
@@ -170,20 +180,14 @@ private fun SecondaryButton(text: String, icon: ImageVector, onClick: () -> Unit
 private fun PillButton(text: String, onClick: () -> Unit, filled: Boolean, container: Color? = null) {
     val c = rohyColors
     val colors = if (filled) {
-        ButtonDefaults.buttonColors(containerColor = container ?: c.primary, contentColor = Color.White)
+        ButtonDefaults.buttonColors(containerColor = container ?: c.primary, contentColor = c.onPrimary)
     } else {
-        ButtonDefaults.outlinedButtonColors(containerColor = c.surface, contentColor = c.accentText)
+        ButtonDefaults.buttonColors(containerColor = c.accentSoft, contentColor = c.onAccentSoft)
     }
-    val modifier = Modifier.heightIn(min = 36.dp)
+    val modifier = Modifier.heightIn(min = 40.dp)
     val padding = PaddingValues(horizontal = 14.dp)
-    if (filled) {
-        Button(onClick, modifier, shape = CircleShape, colors = colors, contentPadding = padding) { Text(text, style = RohyText.chip) }
-    } else {
-        OutlinedButton(
-            onClick, modifier, shape = CircleShape, colors = colors, contentPadding = padding,
-            border = androidx.compose.foundation.BorderStroke(1.dp, c.controlLine),
-        ) { Text(text, style = RohyText.chip) }
-    }
+    // Unfilled = Material 3 tonal button (soft blueberry), as on the board.
+    Button(onClick, modifier, shape = CircleShape, colors = colors, contentPadding = padding) { Text(text, style = RohyText.chip) }
 }
 
 // Onboarding.
@@ -200,11 +204,10 @@ fun OnboardingScreen(onScan: () -> Unit, onPasteCode: () -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 AppBar()
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        IconTile(RohyIcons.Phone, c.accentSoft, c.accentText, size = 64.dp, radius = 20.dp, iconSize = 30.dp)
-                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) { repeat(6) { Dot(c.offline, size = 3.dp) } }
-                        IconTile(RohyIcons.Computer, c.accentSoft, c.accentText, size = 64.dp, radius = 20.dp, iconSize = 32.dp)
-                    }
+                    Box(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(c.heroCard).padding(vertical = 18.dp, horizontal = 20.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { DuoIllustration(heart = false) }
                     Text(
                         "Relie ton ordinateur", style = RohyText.hero, color = c.ink,
                         modifier = Modifier.padding(top = 8.dp).semantics { heading() },
@@ -223,7 +226,7 @@ fun OnboardingScreen(onScan: () -> Unit, onPasteCode: () -> Unit) {
                         ).forEachIndexed { index, step ->
                             Row(Modifier.padding(horizontal = 18.dp, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                                 Box(Modifier.size(28.dp).clip(CircleShape).background(c.primary), contentAlignment = Alignment.Center) {
-                                    Text("${index + 1}", style = RohyText.chip.copy(fontSize = RohyText.rowTitle.fontSize.times(0.93f)), color = Color.White)
+                                    Text("${index + 1}", style = RohyText.chip.copy(fontSize = RohyText.rowTitle.fontSize.times(0.93f)), color = c.onPrimary)
                                 }
                                 Text(step, style = RohyText.body, color = c.ink, modifier = Modifier.padding(top = 3.dp))
                             }
@@ -267,8 +270,8 @@ fun HomeScreen(
     val connected = content.header is HomeHeader.Connected
     Page {
         AppBar {
-            IconButton(onClick = onOpenJournal) {
-                Icon(RohyIcons.History, contentDescription = "Journal de connexion", tint = c.muted)
+            IconButton(onClick = onOpenJournal, modifier = Modifier.size(48.dp).clip(CircleShape).background(c.accentSoft)) {
+                Icon(RohyIcons.History, contentDescription = "Journal de connexion", tint = c.onAccentSoft)
             }
         }
         when (val header = content.header) {
@@ -294,24 +297,65 @@ fun HomeScreen(
 
 @Composable
 private fun ConnectedBanner(computer: String, activity: String?) {
+    val c = rohyColors
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Brand).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(c.heroCard)
+            .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconTile(RohyIcons.Computer, Color.White.copy(alpha = 0.14f), Color.White, size = 44.dp, radius = 22.dp, iconSize = 22.dp)
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("SYNCHRONISATION ACTIVE", style = RohyText.label, color = OnBrandLabel)
-                Text(breakable("Connecté à $computer"), style = RohyText.bannerTitle, color = Color.White, modifier = Modifier.semantics { heading() })
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { DuoIllustration(heart = true) }
+        Row(
+            Modifier.clip(CircleShape).background(c.heroDevice).padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Dot(c.success)
+            Text("Synchronisation active", style = RohyText.chip, color = c.successText)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(breakable("Connecté à $computer"), style = RohyText.bannerTitle, color = c.onHeroCard, modifier = Modifier.semantics { heading() })
+            if (activity != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val icon = if (activity.startsWith("Texte envoyé")) RohyIcons.Sent else RohyIcons.Received
+                    Icon(icon, contentDescription = null, tint = c.onHeroCard, modifier = Modifier.size(16.dp))
+                    Text(activity, style = RohyText.small, color = c.onHeroCard)
+                }
             }
         }
-        if (activity != null) {
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.16f)))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val icon = if (activity.startsWith("Texte envoyé")) RohyIcons.Sent else RohyIcons.Received
-                Icon(icon, contentDescription = null, tint = OnBrandBody, modifier = Modifier.size(16.dp))
-                Text(activity, style = RohyText.small, color = OnBrandBody)
-            }
+    }
+}
+
+/** The phone and the computer smiling at each other (board: home illustration), drawn in the board's 318 x 110 frame. */
+@Composable
+private fun DuoIllustration(heart: Boolean) {
+    val c = rohyColors
+    val smallSmile = remember { PathParser().parsePathString("M64 67 q7 6 14 0").toPath() }
+    val bigSmile = remember { PathParser().parsePathString("M233 62 q10 8 20 0").toPath() }
+    val link = remember { PathParser().parsePathString("M100 62 C 134 18, 180 18, 208 54").toPath() }
+    val heartPath = remember {
+        PathParser().parsePathString("M154 40 c -7 -5 -13 -9 -13 -15 a 6.5 6.5 0 0 1 13 -2 a 6.5 6.5 0 0 1 13 2 c 0 6 -6 10 -13 15 z").toPath()
+    }
+    Canvas(Modifier.widthIn(max = 340.dp).fillMaxWidth().aspectRatio(318f / 110f)) {
+        val k = size.width / 318f
+        withTransform({ scale(k, k, pivot = Offset.Zero) }) {
+            drawPath(link, c.primary, style = Stroke(width = 4f, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f, 10f))))
+            if (heart) drawPath(heartPath, c.peach)
+            val face = Stroke(width = 2.8f, cap = StrokeCap.Round)
+            // Phone.
+            drawRoundRect(c.heroDevice, Offset(44f, 16f), Size(54f, 86f), CornerRadius(15f))
+            drawRoundRect(c.line, Offset(62f, 22f), Size(18f, 4f), CornerRadius(2f))
+            drawCircle(c.ink, 3.6f, Offset(62f, 56f))
+            drawCircle(c.ink, 3.6f, Offset(80f, 56f))
+            drawPath(smallSmile, c.ink, style = face)
+            drawOval(c.peach.copy(alpha = 0.7f), Offset(51f, 62.4f), Size(8f, 5.2f))
+            drawOval(c.peach.copy(alpha = 0.7f), Offset(83f, 62.4f), Size(8f, 5.2f))
+            // Computer.
+            drawRoundRect(c.heroDevice, Offset(196f, 24f), Size(94f, 62f), CornerRadius(13f))
+            drawRoundRect(c.heroDevice, Offset(184f, 88f), Size(118f, 12f), CornerRadius(6f))
+            drawCircle(c.ink, 3.8f, Offset(231f, 50f))
+            drawCircle(c.ink, 3.8f, Offset(255f, 50f))
+            drawPath(bigSmile, c.ink, style = face)
+            drawOval(c.peach.copy(alpha = 0.7f), Offset(215.6f, 57.2f), Size(8.8f, 5.6f))
+            drawOval(c.peach.copy(alpha = 0.7f), Offset(261.6f, 57.2f), Size(8.8f, 5.6f))
         }
     }
 }
@@ -361,31 +405,45 @@ private fun LocalNetworkAlert(onAllow: () -> Unit) {
     }
 }
 
+/** Shape of one row in a Material 3 Expressive grouped list: the ends are rounder than the joints. */
+private fun groupShape(index: Int, count: Int): RoundedCornerShape {
+    val outer = 26.dp
+    val inner = 8.dp
+    return RoundedCornerShape(
+        topStart = if (index == 0) outer else inner, topEnd = if (index == 0) outer else inner,
+        bottomStart = if (index == count - 1) outer else inner, bottomEnd = if (index == count - 1) outer else inner,
+    )
+}
+
 @Composable
 private fun Shortcuts(onAddTile: () -> Unit, handleEnabled: Boolean, onToggleHandle: (Boolean) -> Unit) {
     val c = rohyColors
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    @Composable
+    fun item(index: Int) = Modifier.fillMaxWidth().clip(groupShape(index, 4)).background(c.surface)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle("Envoyer plus vite")
-        Card {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             // The whole row toggles, so TalkBack reads one switch with its label.
             ShortcutRow(
-                RohyIcons.Send, "Poignée d'envoi", "Fine barre sur le bord, quand l'ordinateur est connecté.",
-                tile = c.primary to Color.White,
-                modifier = Modifier.toggleable(value = handleEnabled, role = Role.Switch, onValueChange = onToggleHandle),
+                RohyIcons.Send, "Poignée d'envoi", "Glisse le bord droit vers le centre.",
+                modifier = item(0).toggleable(value = handleEnabled, role = Role.Switch, onValueChange = onToggleHandle),
             ) {
                 Switch(
                     checked = handleEnabled, onCheckedChange = null,
-                    colors = SwitchDefaults.colors(checkedTrackColor = c.primary, checkedThumbColor = Color.White),
+                    colors = SwitchDefaults.colors(checkedTrackColor = c.primary, checkedThumbColor = c.onPrimary),
                 )
             }
-            Divider()
-            ShortcutRow(RohyIcons.Tile, "Tuile des réglages rapides", "Glisse depuis le haut de l'écran, touche « Envoyer ».") {
+            ShortcutRow(
+                RohyIcons.Tile, "Tuile des réglages rapides", "Glisse depuis le haut, touche « Envoyer ».",
+                tile = c.peachSoft to c.onPeachSoft, modifier = item(1),
+            ) {
                 PillButton("Ajouter", onAddTile, filled = false)
             }
-            Divider()
-            ShortcutRow(RohyIcons.TextSelect, "Menu de sélection", "Sélectionne un texte, puis « Envoyer à l'ordinateur ».")
-            Divider()
-            ShortcutRow(RohyIcons.Share, "Partager", "Depuis n'importe quelle app : Partager, puis Rohy.")
+            ShortcutRow(RohyIcons.TextSelect, "Menu de sélection", "Sélectionne un texte, puis « Envoyer à l'ordinateur ».", modifier = item(2))
+            ShortcutRow(
+                RohyIcons.Share, "Partager", "Depuis n'importe quelle app : Partager, puis Rohy.",
+                tile = c.peachSoft to c.onPeachSoft, modifier = item(3),
+            )
         }
     }
 }
@@ -400,8 +458,8 @@ private fun ShortcutRow(
     trailing: @Composable () -> Unit = {},
 ) {
     val c = rohyColors
-    Row(modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        IconTile(icon, tile?.first ?: c.accentSoft, tile?.second ?: c.accentText)
+    Row(modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        IconTile(icon, tile?.first ?: c.accentSoft, tile?.second ?: c.onAccentSoft)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, style = RohyText.rowTitle, color = c.ink)
             Text(detail, style = RohyText.small, color = c.muted)
@@ -414,9 +472,8 @@ private fun ShortcutRow(
 private fun ReliabilityRow(summary: ReliabilitySummary, onOpen: () -> Unit) {
     val c = rohyColors
     val (tile, tint) = if (summary.needsAttention) c.warningSoft to c.warning else c.successSoft to c.successText
-    val shape = RoundedCornerShape(20.dp)
     Row(
-        Modifier.fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.line, shape)
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(c.surface)
             .clickable(role = Role.Button, onClick = onOpen).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -445,11 +502,11 @@ private fun ComputerCard(computer: String, detail: String, onForget: () -> Unit)
             containerColor = c.surface,
         )
     }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle("Ordinateur associé")
         Card {
             Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconTile(RohyIcons.Computer, c.neutralSoft, c.muted)
+                IconTile(RohyIcons.Computer, c.accentSoft, c.onAccentSoft)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(computer, style = RohyText.rowTitle, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(detail, style = RohyText.small, color = c.muted)

@@ -396,9 +396,8 @@ class EdgeHandle(
                 } else {
                     TabColors(0xFFFFF1E0.toInt(), 0x1F7A3D00, 0xFF7A3D00.toInt(), 0x1F9A4D00, 0xFF7A3D00.toInt(), 0x337A3D00)
                 }
-                else -> TabColors(
-                    if (dark) 0xFF2A6B7E.toInt() else 0xFF1B4B5A.toInt(), 0x1AFFFFFF, WHITE, 0x29FFFFFF, WHITE, 0x38FFFFFF,
-                )
+                // Blueberry of the app icon in both appearances: white text stays readable over any app.
+                else -> TabColors(0xFF5653D0.toInt(), 0x1AFFFFFF, WHITE, 0x29FFFFFF, WHITE, 0x38FFFFFF)
             }
         }
     }
