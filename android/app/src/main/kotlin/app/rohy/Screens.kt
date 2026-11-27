@@ -554,7 +554,7 @@ fun HandlePermissionScreen(onAllow: () -> Unit, onLater: () -> Unit) {
             Divider()
             Guarantee(RohyIcons.Shield, "Rohy ne lit le presse-papiers que quand tu touches « Envoyer ».")
             Divider()
-            Guarantee(RohyIcons.Close, "Touche ✕ pour la masquer, à tout moment.")
+            Guarantee(RohyIcons.Close, "Désactive-la quand tu veux avec l'interrupteur de l'accueil.")
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(

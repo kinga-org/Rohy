@@ -19,6 +19,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.view.animation.DecelerateInterpolator
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -28,23 +30,23 @@ import kotlin.math.abs
 
 /**
  * The edge handle of phase 10: a thin bar on the right edge, drawn over other apps while the phone is
- * connected. Tapping it opens a tab "Envoyer à l'ordinateur" + ✕. The tab's window takes the focus, which
- * is what lets Rohy read the clipboard (Android 10+); the transparent activity of the tile is the fallback.
+ * connected. Swiping it toward the middle opens a tab "Envoyer à l'ordinateur" that slides out of the edge.
+ * The tab's window takes the focus, which is what lets Rohy read the clipboard (Android 10+); the transparent
+ * activity of the tile is the fallback. It is turned off from the home screen's switch only (no ✕ on the tab).
+ * The window keeps the bar's height and place in every state, so opening never moves it; only its width
+ * follows the content, which stays anchored to the right edge.
  * Main thread only. Board: "Rohy Android — refonte", row "Poignée « Envoyer à l'ordinateur »".
  */
 class EdgeHandle(
     private val context: Context,
     private val storage: Storage,
     private val onSend: (String) -> Unit,
-    private val onHiddenChanged: () -> Unit,
 ) {
     private val windows = context.getSystemService(WindowManager::class.java)
     private val main = Handler(Looper.getMainLooper())
     private val fold = Runnable { show(HandleMode.REST) }
-    private val dropMessage = Runnable { removeMessage() }
     private var root: Root? = null
     private var params: WindowManager.LayoutParams? = null
-    private var message: View? = null
     private var mode = HandleMode.REST
 
     /** Shows or removes the handle; called whenever the connection or the settings change. */
@@ -64,7 +66,7 @@ class EdgeHandle(
         val view = Root(context)
         val layout = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            dp(AREA_HEIGHT),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             BASE_FLAGS or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT,
@@ -76,7 +78,7 @@ class EdgeHandle(
         params = layout
         mode = HandleMode.REST
         render()
-        layout.y = topFor(HandleMode.REST)
+        layout.y = top()
         if (runCatching { windows.addView(view, layout) }.isFailure) {
             root = null
             params = null
@@ -93,8 +95,10 @@ class EdgeHandle(
     private fun show(next: HandleMode) {
         if (root == null) return
         main.removeCallbacks(fold)
+        val opening = mode == HandleMode.REST && next == HandleMode.OPEN
         mode = next
         render()
+        if (opening) root?.getChildAt(0)?.let(::slideIn)
         place()
         EdgeHandleRules.timeoutMillis(next)?.let { main.postDelayed(fold, it) }
     }
@@ -104,14 +108,23 @@ class EdgeHandle(
         val view = root ?: return
         val layout = params ?: return
         layout.flags = if (mode == HandleMode.OPEN) BASE_FLAGS else BASE_FLAGS or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-        layout.y = topFor(mode)
+        layout.y = top()
         runCatching { windows.updateViewLayout(view, layout) }
     }
 
-    /** The tab is centered on the bar's touch area, so it opens where the finger is. */
-    private fun topFor(mode: HandleMode): Int {
-        val barTop = EdgeHandleRules.topOffset(storage.handlePosition, availableHeight(), dp(AREA_HEIGHT))
-        return if (mode == HandleMode.REST) barTop else barTop + (dp(AREA_HEIGHT) - dp(TAB_HEIGHT)) / 2
+    /** Top of the window, the same for the bar and the tab: the tab is centered on the bar, where the finger is. */
+    private fun top(): Int = EdgeHandleRules.topOffset(storage.handlePosition, availableHeight(), dp(AREA_HEIGHT))
+
+    /** Like a drawer pulled from the edge: the tab enters from the right, before its first frame is drawn. */
+    private fun slideIn(view: View) {
+        view.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                view.viewTreeObserver.removeOnPreDrawListener(this)
+                view.translationX = view.width.toFloat()
+                view.animate().translationX(0f).setDuration(SLIDE_MS).setInterpolator(DecelerateInterpolator()).start()
+                return true
+            }
+        })
     }
 
     private fun availableHeight(): Int =
@@ -121,7 +134,11 @@ class EdgeHandle(
     private fun render() {
         val view = root ?: return
         view.removeAllViews()
-        view.addView(if (mode == HandleMode.REST) bar() else tab())
+        val anchored = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.CENTER_VERTICAL,
+        )
+        if (mode == HandleMode.REST) view.addView(bar(), FrameLayout.LayoutParams(dp(AREA_WIDTH), dp(AREA_HEIGHT), Gravity.END))
+        else view.addView(tab(), anchored)
     }
 
     // The bar.
@@ -134,7 +151,6 @@ class EdgeHandle(
     @SuppressLint("ClickableViewAccessibility")
     private fun bar(): View {
         val area = FrameLayout(context).apply {
-            layoutParams = ViewGroup.LayoutParams(dp(AREA_WIDTH), dp(AREA_HEIGHT))
             contentDescription = "Rohy : glisser vers le centre pour envoyer le presse-papiers à l'ordinateur"
             isClickable = true
         }
@@ -245,14 +261,6 @@ class EdgeHandle(
             action.contentDescription = "Envoyer le presse-papiers à l'ordinateur"
             action.isClickable = true
             action.setOnClickListener { sendClipboard() }
-            tab.addView(View(context).apply { setBackgroundColor(colors.divider) }, LinearLayout.LayoutParams(dp(1), dp(26)))
-            tab.addView(ImageView(context).apply {
-                setImageResource(R.drawable.ic_handle_close)
-                imageTintList = ColorStateList.valueOf(colors.text)
-                scaleType = ImageView.ScaleType.CENTER
-                contentDescription = "Masquer la poignée"
-                setOnClickListener { hide() }
-            }, LinearLayout.LayoutParams(dp(48), dp(TAB_HEIGHT)))
         } else {
             tab.isFocusable = true
             tab.contentDescription = listOfNotNull(title, subtitle).joinToString(", ")
@@ -297,69 +305,6 @@ class EdgeHandle(
         }
         show(EdgeHandleRules.resultMode(text))
         text?.let(onSend)
-    }
-
-    // Hiding.
-
-    private fun hide() {
-        storage.handleHidden = true
-        detach()
-        onHiddenChanged()
-        showHiddenMessage()
-    }
-
-    private fun showHiddenMessage() {
-        removeMessage()
-        val dark = dark()
-        val view = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(10), dp(8), dp(10))
-            minimumHeight = dp(56)
-            background = GradientDrawable().apply {
-                cornerRadius = dp(16).toFloat()
-                setColor(if (dark) 0xFFE6EEF0.toInt() else 0xFF172429.toInt())
-            }
-            addView(
-                label("Poignée masquée. Réaffiche-la depuis la notification Rohy.", 14f, R.font.inter_regular,
-                    if (dark) 0xFF12262C.toInt() else 0xFFE6EEF0.toInt()).apply { maxLines = 2 },
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
-            )
-            addView(label("Annuler", 14f, R.font.inter_bold, if (dark) 0xFF1B4B5A.toInt() else 0xFF8CC7D6.toInt()).apply {
-                setPadding(dp(12), dp(10), dp(12), dp(10))
-                setOnClickListener {
-                    storage.handleHidden = false
-                    removeMessage()
-                    onHiddenChanged()
-                }
-            })
-        }
-        val layout = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            BASE_FLAGS or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.BOTTOM
-            y = dp(46)
-            horizontalMargin = 0f
-            title = "Rohy"
-        }
-        val wrapper = FrameLayout(context).apply {
-            setPadding(dp(16), 0, dp(16), 0)
-            addView(view)
-        }
-        if (runCatching { windows.addView(wrapper, layout) }.isSuccess) {
-            message = wrapper
-            main.postDelayed(dropMessage, EdgeHandleRules.HIDDEN_MESSAGE_MS)
-        }
-    }
-
-    private fun removeMessage() {
-        main.removeCallbacks(dropMessage)
-        message?.let { runCatching { windows.removeViewImmediate(it) } }
-        message = null
     }
 
     private fun dark() =
@@ -407,6 +352,7 @@ class EdgeHandle(
         const val AREA_HEIGHT = 76
         const val TAB_HEIGHT = 52
         const val SWIPE_DISTANCE = 24
+        const val SLIDE_MS = 200L
         const val WHITE = 0xFFFFFFFF.toInt()
 
         /** Light gray at 80 %, like Samsung's handle: visible on light and dark apps alike. */
