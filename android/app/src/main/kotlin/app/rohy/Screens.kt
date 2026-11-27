@@ -186,7 +186,7 @@ private fun PillButton(text: String, onClick: () -> Unit, filled: Boolean, conta
     }
     val modifier = Modifier.heightIn(min = 40.dp)
     val padding = PaddingValues(horizontal = 14.dp)
-    // Unfilled = Material 3 tonal button (soft blueberry), as on the board.
+    // Unfilled = Material 3 tonal button (soft lagoon), as on the board.
     Button(onClick, modifier, shape = CircleShape, colors = colors, contentPadding = padding) { Text(text, style = RohyText.chip) }
 }
 
@@ -338,7 +338,7 @@ private fun DuoIllustration(heart: Boolean) {
         val k = size.width / 318f
         withTransform({ scale(k, k, pivot = Offset.Zero) }) {
             drawPath(link, c.primary, style = Stroke(width = 4f, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f, 10f))))
-            if (heart) drawPath(heartPath, c.peach)
+            if (heart) drawPath(heartPath, c.sun)
             val face = Stroke(width = 2.8f, cap = StrokeCap.Round)
             // Phone.
             drawRoundRect(c.heroDevice, Offset(44f, 16f), Size(54f, 86f), CornerRadius(15f))
@@ -346,16 +346,16 @@ private fun DuoIllustration(heart: Boolean) {
             drawCircle(c.ink, 3.6f, Offset(62f, 56f))
             drawCircle(c.ink, 3.6f, Offset(80f, 56f))
             drawPath(smallSmile, c.ink, style = face)
-            drawOval(c.peach.copy(alpha = 0.7f), Offset(51f, 62.4f), Size(8f, 5.2f))
-            drawOval(c.peach.copy(alpha = 0.7f), Offset(83f, 62.4f), Size(8f, 5.2f))
+            drawOval(c.sun.copy(alpha = 0.7f), Offset(51f, 62.4f), Size(8f, 5.2f))
+            drawOval(c.sun.copy(alpha = 0.7f), Offset(83f, 62.4f), Size(8f, 5.2f))
             // Computer.
             drawRoundRect(c.heroDevice, Offset(196f, 24f), Size(94f, 62f), CornerRadius(13f))
             drawRoundRect(c.heroDevice, Offset(184f, 88f), Size(118f, 12f), CornerRadius(6f))
             drawCircle(c.ink, 3.8f, Offset(231f, 50f))
             drawCircle(c.ink, 3.8f, Offset(255f, 50f))
             drawPath(bigSmile, c.ink, style = face)
-            drawOval(c.peach.copy(alpha = 0.7f), Offset(215.6f, 57.2f), Size(8.8f, 5.6f))
-            drawOval(c.peach.copy(alpha = 0.7f), Offset(261.6f, 57.2f), Size(8.8f, 5.6f))
+            drawOval(c.sun.copy(alpha = 0.7f), Offset(215.6f, 57.2f), Size(8.8f, 5.6f))
+            drawOval(c.sun.copy(alpha = 0.7f), Offset(261.6f, 57.2f), Size(8.8f, 5.6f))
         }
     }
 }
@@ -435,14 +435,14 @@ private fun Shortcuts(onAddTile: () -> Unit, handleEnabled: Boolean, onToggleHan
             }
             ShortcutRow(
                 RohyIcons.Tile, "Tuile des réglages rapides", "Glisse depuis le haut, touche « Envoyer ».",
-                tile = c.peachSoft to c.onPeachSoft, modifier = item(1),
+                tile = c.sunSoft to c.onSunSoft, modifier = item(1),
             ) {
                 PillButton("Ajouter", onAddTile, filled = false)
             }
             ShortcutRow(RohyIcons.TextSelect, "Menu de sélection", "Sélectionne un texte, puis « Envoyer à l'ordinateur ».", modifier = item(2))
             ShortcutRow(
                 RohyIcons.Share, "Partager", "Depuis n'importe quelle app : Partager, puis Rohy.",
-                tile = c.peachSoft to c.onPeachSoft, modifier = item(3),
+                tile = c.sunSoft to c.onSunSoft, modifier = item(3),
             )
         }
     }

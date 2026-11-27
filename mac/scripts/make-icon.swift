@@ -1,5 +1,5 @@
 // Draws the macOS app icon (Resources/Assets.xcassets/AppIcon.appiconset) from the Rohy logo
-// "Le presse-papiers": blueberry rounded square on the standard macOS icon grid, smiling clipboard.
+// "La corde": lagoon rounded square on the standard macOS icon grid, white rope with sun-yellow ends.
 // Run from mac/: swift scripts/make-icon.swift
 import AppKit
 
@@ -28,39 +28,31 @@ func draw(pixels: Int) -> Data {
     context.saveGState()
     context.setShadow(offset: CGSize(width: 0, height: -10), blur: 24, color: CGColor(gray: 0, alpha: 0.28))
     context.addPath(tile)
-    context.setFillColor(color(0x5653D0))
+    context.setFillColor(color(0x1B6E85))
     context.fillPath()
     context.restoreGState()
     context.saveGState()
     context.addPath(tile)
     context.clip()
-    let gradient = CGGradient(colorsSpace: space, colors: [color(0x6865DE), color(0x4C49C2)] as CFArray,
+    let gradient = CGGradient(colorsSpace: space, colors: [color(0x2683A0), color(0x155C70)] as CFArray,
                               locations: [0, 1])!
     context.drawLinearGradient(gradient, start: CGPoint(x: 512, y: 100), end: CGPoint(x: 512, y: 924), options: [])
     context.restoreGState()
 
-    // Clipboard: the board's 100-unit logo, scaled 6 and centered.
+    // Rope: the board's 100-unit logo, scaled 6 and centered.
     context.translateBy(x: 212, y: 212)
     context.scaleBy(x: 6, y: 6)
-    context.setFillColor(.white)
-    context.addPath(rounded(CGRect(x: 27, y: 27, width: 46, height: 54), 14))
-    context.fillPath()
-    context.setFillColor(color(0xFF9F6E))
-    context.addPath(rounded(CGRect(x: 39, y: 20, width: 22, height: 13), 6.5))
-    context.fillPath()
-    context.addEllipse(in: CGRect(x: 31.6, y: 56.8, width: 6.8, height: 4.4))
-    context.addEllipse(in: CGRect(x: 61.6, y: 56.8, width: 6.8, height: 4.4))
-    context.fillPath()
-    context.setFillColor(color(0x5653D0))
-    context.addEllipse(in: CGRect(x: 38.8, y: 47.8, width: 6.4, height: 6.4))
-    context.addEllipse(in: CGRect(x: 54.8, y: 47.8, width: 6.4, height: 6.4))
-    context.fillPath()
-    context.setStrokeColor(color(0x5653D0))
-    context.setLineWidth(2.8)
+    context.setStrokeColor(.white)
+    context.setLineWidth(10)
     context.setLineCap(.round)
-    context.move(to: CGPoint(x: 43, y: 61))
-    context.addQuadCurve(to: CGPoint(x: 57, y: 61), control: CGPoint(x: 50, y: 67))
+    context.move(to: CGPoint(x: 27, y: 67))
+    context.addCurve(to: CGPoint(x: 50, y: 50), control1: CGPoint(x: 27, y: 36), control2: CGPoint(x: 50, y: 32))
+    context.addCurve(to: CGPoint(x: 73, y: 33), control1: CGPoint(x: 50, y: 68), control2: CGPoint(x: 73, y: 64))
     context.strokePath()
+    context.setFillColor(color(0xF5B71E))
+    context.addEllipse(in: CGRect(x: 18, y: 60, width: 18, height: 18))
+    context.addEllipse(in: CGRect(x: 64, y: 22, width: 18, height: 18))
+    context.fillPath()
 
     let rep = NSBitmapImageRep(cgImage: context.makeImage()!)
     return rep.representation(using: .png, properties: [:])!

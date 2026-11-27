@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Rohy logo "Le presse-papiers": a smiling clipboard on a blueberry squircle (design board, Logos). -->
+<!-- Rohy logo "La corde": a soft rope linking two points, on a lagoon squircle (design board, Logos). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="40dp"
     android:height="40dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    <path android:fillColor="#FF5653D0" android:pathData="M28,0 H72 A28,28 0 0 1 100,28 V72 A28,28 0 0 1 72,100 H28 A28,28 0 0 1 0,72 V28 A28,28 0 0 1 28,0 Z" />
+    <path android:fillColor="#FF1B6E85" android:pathData="M28,0 H72 A28,28 0 0 1 100,28 V72 A28,28 0 0 1 72,100 H28 A28,28 0 0 1 0,72 V28 A28,28 0 0 1 28,0 Z" />
     <group>
-        <path android:fillColor="#FFFFFFFF" android:pathData="M41,27 H59 A14,14 0 0 1 73,41 V67 A14,14 0 0 1 59,81 H41 A14,14 0 0 1 27,67 V41 A14,14 0 0 1 41,27 Z" />
-        <path android:fillColor="#FFFF9F6E" android:pathData="M45.5,20 H54.5 A6.5,6.5 0 0 1 54.5,33 H45.5 A6.5,6.5 0 0 1 45.5,20 Z" />
-        <path android:fillColor="#FF5653D0" android:pathData="M38.8,51 A3.2,3.2 0 1 0 45.2,51 A3.2,3.2 0 1 0 38.8,51 Z M54.8,51 A3.2,3.2 0 1 0 61.2,51 A3.2,3.2 0 1 0 54.8,51 Z" />
-        <path android:strokeColor="#FF5653D0" android:strokeWidth="2.8" android:strokeLineCap="round" android:pathData="M43,61 Q50,67 57,61" />
-        <path android:fillColor="#FFFF9F6E" android:pathData="M31.6,59 A3.4,2.2 0 1 0 38.4,59 A3.4,2.2 0 1 0 31.6,59 Z M61.6,59 A3.4,2.2 0 1 0 68.4,59 A3.4,2.2 0 1 0 61.6,59 Z" />
+        <path android:strokeColor="#FFFFFFFF" android:strokeWidth="10" android:strokeLineCap="round" android:pathData="M27,67 C27,36 50,32 50,50 C50,68 73,64 73,33" />
+        <path android:fillColor="#FFF5B71E" android:pathData="M18,69 A9,9 0 1 0 36,69 A9,9 0 1 0 18,69 Z M64,31 A9,9 0 1 0 82,31 A9,9 0 1 0 64,31 Z" />
     </group>
 </vector>
