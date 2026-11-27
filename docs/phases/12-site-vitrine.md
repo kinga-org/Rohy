@@ -33,6 +33,12 @@ Sélecteur de langue EN | FR : dans l'en-tête sur ordinateur, en bas du menu su
   `rohy-downloads` (fichiers 0.1.2 à 0.1.4), clés Turnstile, Worker `rohy-site`. Pages, 404, API des
   avis et téléchargements vérifiés en ligne ; le widget Turnstile se charge avec la vraie clé.
 
+## Référencement
+- `sitemap.xml` (6 pages, liens anglais/français), `robots.txt` qui l'annonce et bloque `/api/` et
+  `/download/`, fiche `SoftwareApplication` (JSON-LD) sur l'accueil, sans note inventée.
+- À faire par le propriétaire : Google Search Console (propriété `kingalabs.com`, envoi du sitemap),
+  Bing Webmaster Tools (import depuis Google), Crawler Hints dans Cloudflare.
+
 ## Reste à faire
 - Premier vrai avis envoyé depuis le site en ligne (essai par le propriétaire).
 - Envoyer les fichiers dans R2 depuis le workflow de release (jeton Cloudflare en secret GitHub).
