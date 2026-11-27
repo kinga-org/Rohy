@@ -32,11 +32,11 @@ autorisation, réglage dans l'accueil, sombre.
 - La fenêtre garde la hauteur et la place de la barre dans tous les états ; seule sa largeur suit le
   contenu, ancré au bord droit. Avant, elle changeait de taille et de position à l'ouverture et
   l'onglet semblait arriver du haut.
-- Appui long puis glisser : la poignée suit le bord gauche ou droit (elle passe d'un côté à l'autre en
-  suivant le doigt) et se courbe dans les coins, avec le rayon de l'écran ou au moins 40 dp (le S24
-  Ultra annonce des coins presque carrés). Pas sur les bords du haut et du bas : barre d'état et geste
-  Accueil. Pendant le déplacement : app assombrie, chemin possible en pointillés, barre épaisse en
-  bleu-vert, vibration en entrant ou sortant d'un coin. Côté et position (fraction du chemin) gardés,
+- Appui long puis glisser : la poignée monte ou descend le long du bord, et passe du bord droit au bord
+  gauche en suivant le doigt. La barre reste toujours droite (essai d'une courbe dans les coins retiré le
+  27 nov. : l'écran du S24 Ultra a des coins carrés). Pas sur les bords du haut et du bas : barre d'état
+  et geste Accueil. Pendant le déplacement : app assombrie, chemins possibles en pointillés, barre
+  épaisse en bleu-vert, vibration en changeant de côté. Côté et position (fraction du bord) gardés,
   valables en portrait et en paysage. À gauche, l'onglet s'ouvre vers la droite. Géométrie pure dans
   `HandleTrack`, testée.
 - Accueil : ligne « Poignée d'envoi » avec interrupteur dans « Envoyer plus vite » ; écran d'explication

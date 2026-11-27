@@ -15,10 +15,10 @@ enum class HandleSide { LEFT, RIGHT }
 data class TrackPoint(val x: Float, val y: Float)
 
 /**
- * The path the edge handle slides along on one side of the screen (board "Poignée — déplacement le long des
- * bords et dans les coins"): straight down the side, bending with the screen's rounded corners at both ends,
- * and cut at [top] and [bottom], where Android keeps the status bar and the home gesture and the handle could
- * not be touched. Free of Android types so it is unit tested.
+ * The path the edge handle slides along on one side of the screen: straight down the side, cut at [top] and
+ * [bottom], where Android keeps the status bar and the home gesture and the handle could not be touched. It can
+ * bend with rounded corners ([cornerRadius] > 0), which the app does not use: the owner chose a straight bar
+ * everywhere. Free of Android types so it is unit tested.
  *
  * @param edge x of that side's edge.
  * @param screenTop y of the physical top of the screen (negative when the status bar sits above [top]).

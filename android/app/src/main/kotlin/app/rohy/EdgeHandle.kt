@@ -22,7 +22,6 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.RoundedCorner
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
@@ -42,8 +41,8 @@ import kotlin.math.abs
  * The tab's window takes the focus, which is what lets Rohy read the clipboard (Android 10+); the transparent
  * activity of the tile is the fallback. It is turned off from the home screen's switch only.
  *
- * A long press then a drag moves it along the left or right edge; near a corner it bends with the screen's
- * rounded corner ([HandleTrack]). While moving, a second window dims the app and shows where it can go.
+ * A long press then a drag moves it up and down the right or left edge, always as a straight bar ([HandleTrack]).
+ * While moving, a second window dims the app and shows where it can go.
  * Main thread only. Board: "Rohy Android — refonte", row "Poignée « Envoyer à l'ordinateur »".
  */
 class EdgeHandle(
@@ -119,31 +118,27 @@ class EdgeHandle(
     // Where the handle is.
 
     /** The usable window space: the screen without the status bar, the navigation area and the cutout. */
-    private data class Space(val width: Int, val height: Int, val top: Int, val bottom: Int, val left: Int, val right: Int, val radius: Float)
+    private data class Space(val width: Int, val height: Int, val top: Int, val bottom: Int, val left: Int, val right: Int)
 
     private fun space(): Space {
         if (Build.VERSION.SDK_INT >= 30) {
             val metrics = windows.currentWindowMetrics
             val bars = WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout()
             val insets = metrics.windowInsets.getInsetsIgnoringVisibility(bars)
-            val radius = if (Build.VERSION.SDK_INT >= 31) {
-                metrics.windowInsets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)?.radius?.toFloat()
-            } else null
             return Space(
                 metrics.bounds.width() - insets.left - insets.right, metrics.bounds.height() - insets.top - insets.bottom,
-                insets.top, insets.bottom, insets.left, insets.right, maxOf(radius ?: 0f, dpF(MIN_CORNER)),
+                insets.top, insets.bottom, insets.left, insets.right,
             )
         }
         // Android 10: no window metrics; the status bar is about 24 dp.
         val display = context.resources.displayMetrics
         val status = dp(24)
-        return Space(display.widthPixels, display.heightPixels - status, status, 0, 0, 0, dpF(MIN_CORNER))
+        return Space(display.widthPixels, display.heightPixels - status, status, 0, 0, 0)
     }
 
     private fun track(side: HandleSide): HandleTrack {
         val space = space()
-        // A side with a cutout or a navigation bar has no rounded corner to follow.
-        val sideInset = if (side == HandleSide.RIGHT) space.right else space.left
+        // Always a straight bar: no bending in the corners (owner's choice; many screens, like the S24 Ultra's, are square).
         return HandleTrack(
             side = side,
             edge = if (side == HandleSide.RIGHT) space.width.toFloat() else 0f,
@@ -151,7 +146,7 @@ class EdgeHandle(
             bottom = space.height.toFloat(),
             screenTop = -space.top.toFloat(),
             screenBottom = (space.height + space.bottom).toFloat(),
-            cornerRadius = if (sideInset == 0) space.radius else 0f,
+            cornerRadius = 0f,
             inset = dpF(BAR_INSET),
         )
     }
@@ -333,16 +328,17 @@ class EdgeHandle(
         }
     }
 
-    /** Follows the finger along the nearest side; a tick when the bar enters or leaves a corner. */
+    /** Follows the finger up and down the nearest side; a tick when it changes side. */
     private fun moveTo(rawX: Float, rawY: Float, bar: View) {
         val space = space()
         val x = rawX - space.left
         val y = rawY - space.top
         val side = HandleTrack.sideFor(x, space.width.toFloat())
-        if (side != track.side) track = track(side)
-        val wasInCorner = track.inCorner(center)
+        if (side != track.side) {
+            track = track(side)
+            bar.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
         center = track.clampCenter(track.project(x, y), dpF(BAR_LENGTH))
-        if (track.inCorner(center) != wasInCorner) bar.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         place()
         bar.invalidate()
         guide?.invalidate()
@@ -566,11 +562,6 @@ class EdgeHandle(
         /** Room for the finger around the bar. */
         const val TOUCH_MARGIN = 13
 
-        /**
-         * Smallest curve in the corners: the screen's own radius when it is larger, else this, so the bar visibly
-         * rounds in a corner even on nearly square screens (the S24 Ultra reports 6 px).
-         */
-        const val MIN_CORNER = 40
 
         /** Light gray at 80 %, like Samsung's handle: visible on light and dark apps alike. */
         const val BAR_FILL = 0xCCB8B8B8.toInt()
