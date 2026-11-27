@@ -1,0 +1,29 @@
+{
+  "name": "rohy-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "next build && wrangler dev",
+    "deploy": "next build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply rohy-reviews --local",
+    "db:migrate:remote": "wrangler d1 migrations apply rohy-reviews --remote"
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261127.1",
+    "@types/node": "22.20.7",
+    "@types/react": "19.3.3",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.9.3",
+    "vitest": "5.1.2",
+    "wrangler": "4.168.0"
+  }
+}

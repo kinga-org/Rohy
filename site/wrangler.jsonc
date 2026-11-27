@@ -1,0 +1,25 @@
+// Cloudflare Worker for rohy.kingalabs.com: serves the static export in out/ and answers
+// /api/reviews (D1) and /download/<file> (R2). Setup steps are in README.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rohy-site",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/download/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rohy-reviews",
+      "database_id": "371f8a47-62bc-4d3b-aac5-26ce812e6b6f",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "DOWNLOADS", "bucket_name": "rohy-downloads" }],
+  "routes": [{ "pattern": "rohy.kingalabs.com", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

@@ -18,6 +18,7 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 | [09 — Plusieurs ordinateurs par téléphone](../phases/09-plusieurs-ordinateurs.md) | À faire | Tout |
 | [10 — Poignée d'envoi](../phases/10-poignee-envoi.md) | Fonctionne (Samsung) | Essai sur le Huawei (Android 10) |
 | [11 — Identité Lagon & Soleil, logo « La corde »](../phases/11-identite.md) | En cours (Android, Mac, Windows, Linux codés) | Essais réels sur chaque système, autres écrans Android |
+| [12 — Site vitrine `rohy.kingalabs.com`](../phases/12-site-vitrine.md) | En ligne | Envoi des fichiers dans R2 depuis le workflow de release |
 
 ## Releases
 
@@ -41,18 +42,19 @@ le détail de chaque session de travail est dans un journal daté (`AAAA-MM-JJ.m
 
 ## Prochaines étapes
 
-1. Phase 11 : essayer l'identité Lagon & Soleil sur chaque système (Android clair/sombre, Mac, Windows, Linux).
-2. Phase 10 : essayer la poignée sur le Huawei (Android 10).
-3. Phase 08 : essayer `Rohy.exe` sur un vrai Windows.
-4. Phase 06 : test d'endurance de 24 h, écran éteint, changement de Wi-Fi et veille du Mac.
-5. Phase 08 : installateurs `.msi` et `.deb` / AppImage.
-6. Phase 09 : plusieurs ordinateurs par téléphone.
-7. Phase 05 : prototype des codes de vérification.
-8. Clé de signature Android définitive (fin des réinstallations à chaque version).
+1. Phase 12 : envoyer un premier vrai avis depuis https://rohy.kingalabs.com.
+2. Phase 11 : essayer l'identité Lagon & Soleil sur chaque système (Android clair/sombre, Mac, Windows, Linux).
+3. Phase 10 : essayer la poignée sur le Huawei (Android 10).
+4. Phase 08 : essayer `Rohy.exe` sur un vrai Windows.
+5. Phase 06 : test d'endurance de 24 h, écran éteint, changement de Wi-Fi et veille du Mac.
+6. Phase 08 : installateurs `.msi` et `.deb` / AppImage.
+7. Phase 09 : plusieurs ordinateurs par téléphone.
+8. Phase 05 : prototype des codes de vérification.
+9. Clé de signature Android définitive (fin des réinstallations à chaque version).
 
 ## Journal
 
-- [2026-11-27](2026-11-27.md) — bouton de la tuile des réglages rapides : Ajouter ou Retirer selon l'état.
+- [2026-11-27](2026-11-27.md) — bouton de la tuile des réglages rapides : Ajouter ou Retirer selon l'état ; site vitrine codé (phase 12), domaine `kingalabs.com`.
 - [2026-11-24](2026-11-24.md) — envoi depuis un jeu : poignée d'envoi façon Samsung (phase 10) ; piste « verre » écartée, identité Lagon & Soleil avec le logo « La corde » codée sur Android, Mac, Windows et Linux (phase 11).
 - [2026-11-19](2026-11-19.md) — plantage du scan en release (R8) et plantage Android 10 corrigés, garde-fous R8, Animal Sniffer et Lint en CI ; app Mac native ; build Linux ; 0.1.2 à 0.1.4 publiées ; phase 07 terminée.
 - [2026-11-18](2026-11-18.md) — étude, MVP texte dans les deux sens, premier test réel, CI dans kinga-org, début de la phase 06.
