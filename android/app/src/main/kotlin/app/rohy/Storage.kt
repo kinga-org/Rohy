@@ -45,6 +45,11 @@ class Storage(context: Context) {
         get() = prefs.getBoolean(KEY_HANDLE_HIDDEN, false)
         set(value) = prefs.edit().putBoolean(KEY_HANDLE_HIDDEN, value).apply()
 
+    /** Whether the Quick Settings tile is on the panel, as last reported by the tile or the add request. */
+    var tileAdded: Boolean
+        get() = prefs.getBoolean(KEY_TILE_ADDED, false)
+        set(value) = prefs.edit().putBoolean(KEY_TILE_ADDED, value).apply()
+
     var handlePosition: Float
         get() = EdgeHandleRules.clampPosition(prefs.getFloat(KEY_HANDLE_POSITION, EdgeHandleRules.DEFAULT_POSITION))
         set(value) = prefs.edit().putFloat(KEY_HANDLE_POSITION, EdgeHandleRules.clampPosition(value)).apply()
@@ -92,6 +97,7 @@ class Storage(context: Context) {
         const val KEY_HANDLE_ENABLED = "handle_enabled"
         const val KEY_HANDLE_HIDDEN = "handle_hidden"
         const val KEY_HANDLE_POSITION = "handle_position"
+        const val KEY_TILE_ADDED = "tile_added"
         const val KEY_ALIAS = "rohy_identity_wrap"
         const val KEYSTORE = "AndroidKeyStore"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
