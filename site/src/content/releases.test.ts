@@ -22,6 +22,13 @@ describe("releases", () => {
     expect(Object.keys(LATEST.files).sort()).toEqual(["android", "linux", "macos", "windows"]);
   });
 
+  it("names the APK -test-signature only before the release key (0.2.0)", () => {
+    for (const release of RELEASES) {
+      const old = release.version.startsWith("0.1.");
+      expect(release.files.android!.endsWith("-test-signature.apk")).toBe(old);
+    }
+  });
+
   it("builds download links on the site's own /download path", () => {
     expect(downloadUrl("Rohy-macOS-0.1.4.zip")).toBe("/download/Rohy-macOS-0.1.4.zip");
   });
