@@ -5,11 +5,11 @@ import { t, type Lang } from "@/content/i18n";
 import { BODY_MAX, BODY_MIN, DEVICES, NAME_MAX, type Devices, type ReviewError } from "../../worker/reviews";
 import { CheckIcon, Star } from "./Icons";
 
-/**
- * Public Turnstile site key, set at build time. Without it the form uses Cloudflare's test key,
- * which always passes locally but is refused by the real secret in production.
- */
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
+/** Public Turnstile site key of rohy.kingalabs.com (not a secret; the secret is a Worker secret). */
+const SITE_KEY = "0x4AAAAAAGVreG9DKVe0orlL";
+/** Cloudflare's test key, always passing, for localhost where the real key is refused. */
+const TEST_SITE_KEY = "1x00000000000000000000AA";
+const siteKey = () => (window.location.hostname.endsWith("kingalabs.com") ? SITE_KEY : TEST_SITE_KEY);
 const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 interface Turnstile {
@@ -64,7 +64,7 @@ export function ReviewForm({ lang }: { lang: Lang }) {
       .then((ts) => {
         if (cancelled || !widgetEl.current || widgetId.current) return;
         widgetId.current = ts.render(widgetEl.current, {
-          sitekey: SITE_KEY,
+          sitekey: siteKey(),
           language: lang,
           theme: "light",
           callback: (value: string) => setToken(value),

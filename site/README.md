@@ -35,10 +35,10 @@ Contrôle complet (comme la CI) : `scripts/check-site.sh` depuis la racine du d�
 3. Bucket des téléchargements : `npx wrangler r2 bucket create rohy-downloads`.
 4. Turnstile : tableau de bord Cloudflare → Turnstile → ajouter un widget pour `rohy.kingalabs.com`.
    - clé secrète : `npx wrangler secret put TURNSTILE_SECRET` ;
-   - clé publique : à donner au build, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=<clé> npm run deploy`.
-   Sans clé publique, le site prend la clé de test et le formulaire sera refusé en production.
+   - clé publique : `SITE_KEY` dans `src/components/ReviewForm.tsx` (utilisée sur `*.kingalabs.com`,
+     la clé de test de Cloudflare ailleurs, par exemple en local).
 5. Fichiers : `scripts/upload-release.sh v0.1.4` (copie la release GitHub dans R2).
-6. Mise en ligne : `NEXT_PUBLIC_TURNSTILE_SITE_KEY=<clé> npm run deploy`. Le domaine
+6. Mise en ligne : `npm run deploy`. Le domaine
    `rohy.kingalabs.com` est créé par `wrangler` (`routes` → `custom_domain`).
 
 ## À chaque nouvelle version
@@ -46,7 +46,7 @@ Contrôle complet (comme la CI) : `scripts/check-site.sh` depuis la racine du d�
 1. Ajouter la version en tête de `RELEASES` dans `src/content/releases.ts` (notes en anglais et en
    français) et vider `UPCOMING` de ce qui est sorti.
 2. `scripts/upload-release.sh vX.Y.Z`.
-3. `npm run deploy` (avec la clé Turnstile publique).
+3. `npm run deploy`.
 
 ## Relire les avis
 
