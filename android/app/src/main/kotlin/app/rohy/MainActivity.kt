@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
     private var pairedMac by mutableStateOf<PairedMac?>(null)
     private var checks by mutableStateOf<List<ReliabilityCheck>>(emptyList())
     private var handleEnabled by mutableStateOf(false)
+    private var tileAdded by mutableStateOf(false)
     /** Set while the user is in Android's "Afficher par-dessus les autres apps" screen for the edge handle. */
     private var handlePermissionAsked = false
 
@@ -88,7 +89,9 @@ class MainActivity : ComponentActivity() {
                         onSend = { sendToMac(readClipboard()) },
                         onReconnect = { SyncService.start(this, "reconnexion depuis l'app") },
                         onAllowLocalNetwork = { fix(CheckId.LOCAL_NETWORK) },
+                        tileAdded = tileAdded,
                         onAddTile = ::requestTile,
+                        onRemoveTile = ::removeTile,
                         handleEnabled = handleEnabled,
                         onToggleHandle = { on ->
                             if (on && !Settings.canDrawOverlays(this)) screen = Screen.HANDLE_PERMISSION else setHandle(on)
@@ -106,6 +109,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         pairedMac = storage.pairedMac
         checks = reliabilityChecks(readFacts())
+        tileAdded = storage.tileAdded
         if (handlePermissionAsked && Settings.canDrawOverlays(this)) {
             handlePermissionAsked = false
             setHandle(true)
@@ -154,12 +158,46 @@ class MainActivity : ComponentActivity() {
         getSystemService(ClipboardManager::class.java).primaryClip
             ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)?.toString()
 
+    // The Quick Settings panel opens over the app without pausing it: refresh when the app gets focus back.
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) tileAdded = storage.tileAdded
+    }
+
+    private val tileComponent get() = ComponentName(this, ClipTileService::class.java)
+
     private fun requestTile() {
+        // "Retirer" disables the tile service; it must be enabled again to be added back.
+        packageManager.setComponentEnabledSetting(
+            tileComponent, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, PackageManager.DONT_KILL_APP,
+        )
         if (Build.VERSION.SDK_INT < 33) return toast("Ajoute la tuile « Envoyer à l'ordinateur » depuis l'édition des réglages rapides")
         getSystemService(StatusBarManager::class.java).requestAddTileService(
-            ComponentName(this, ClipTileService::class.java), getString(R.string.tile_label),
+            tileComponent, getString(R.string.tile_label),
             Icon.createWithResource(this, R.drawable.ic_rohy), mainExecutor,
-        ) {}
+        ) { result ->
+            val onPanel = TileRules.onPanelAfterRequest(
+                result, StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED,
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED,
+            )
+            if (onPanel) {
+                storage.tileAdded = true
+                tileAdded = true
+            }
+        }
+    }
+
+    /**
+     * Android has no call to remove a tile from the panel; disabling the tile service makes the system drop it.
+     * "Ajouter" enables it again.
+     */
+    private fun removeTile() {
+        packageManager.setComponentEnabledSetting(
+            tileComponent, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP,
+        )
+        storage.tileAdded = false
+        tileAdded = false
+        toast("Tuile retirée des réglages rapides")
     }
 
     private fun requestStartupPermissions() {
